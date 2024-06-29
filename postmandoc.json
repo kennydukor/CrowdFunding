@@ -1,0 +1,531 @@
+{
+    "info": {
+      "name": "Crowdr API",
+      "description": "API documentation for Crowdr, a crowdfunding platform.",
+      "version": "1.0.0",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+      {
+        "name": "Authentication",
+        "item": [
+          {
+            "name": "Sign Up",
+            "request": {
+              "method": "POST",
+              "header": [],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\",\n  \"firstName\": \"John\",\n  \"middleName\": \"Doe\",\n  \"lastName\": \"Smith\",\n  \"gender\": \"male\",\n  \"organizationName\": \"\",\n  \"userType\": \"Individual\",\n  \"interests\": [\"education\", \"medical\"],\n  \"role\": \"user\"\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/auth/signup",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "auth", "signup"]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "Verify OTP",
+            "request": {
+              "method": "POST",
+              "header": [],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"email\": \"user@example.com\",\n  \"otp\": \"123456\"\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/auth/verifyOTP",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "auth", "verifyOTP"]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "Login",
+            "request": {
+              "method": "POST",
+              "header": [],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/auth/login",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "auth", "login"]
+              }
+            },
+            "response": []
+          }
+        ]
+      },
+      {
+        "name": "User Management",
+        "item": [
+          {
+            "name": "Update Profile",
+            "request": {
+              "method": "PUT",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"firstName\": \"John\",\n  \"middleName\": \"Doe\",\n  \"lastName\": \"Smith\",\n  \"bio\": \"I am a user.\",\n  \"profilePicture\": \"http://example.com/pic.jpg\",\n  \"interests\": [\"education\", \"medical\"]\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/users/profile",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "users", "profile"]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "Change Password",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"oldPassword\": \"oldpassword123\",\n  \"newPassword\": \"newpassword123\"\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/users/changePassword",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "users", "changePassword"]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "Forgot Password",
+            "request": {
+              "method": "POST",
+              "header": [],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"email\": \"user@example.com\"\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/users/forgotPassword",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "users", "forgotPassword"]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "Reset Password",
+            "request": {
+              "method": "POST",
+              "header": [],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"email\": \"user@example.com\",\n  \"otp\": \"123456\",\n  \"newPassword\": \"newpassword123\"\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/users/resetPassword",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "users", "resetPassword"]
+              }
+            },
+            "response": []
+          }
+        ]
+      },
+      {
+        "name": "Campaign Management",
+        "item": [
+          {
+            "name": "Create Campaign",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"title\": \"New Campaign\",\n  \"description\": \"This is a new campaign.\",\n  \"goalAmount\": 1000,\n  \"deadline\": \"2024-12-31\",\n  \"category\": \"Education\"\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/campaigns",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "campaigns"]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "Get Campaigns",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{baseUrl}}/api/campaigns",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "campaigns"]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "Get Campaign By ID",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{baseUrl}}/api/campaigns/:campaignId",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "campaigns", ":campaignId"]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "Update Campaign",
+            "request": {
+              "method": "PUT",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"title\": \"Updated Campaign\",\n  \"description\": \"This is an updated campaign.\",\n  \"goalAmount\": 1500,\n  \"deadline\": \"2025-01-31\",\n  \"category\": \"Medical\"\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/campaigns/:campaignId",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "campaigns", ":campaignId"]
+              }
+            },
+            "response": []
+          }
+        ]
+      },
+      {
+        "name": "Contributions",
+        "item": [
+          {
+            "name": "Create Contribution",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"campaignId\": \"60d1c6f2f0c5e222b8d0c6e4\",\n  \"amount\": 50,\n  \"anonymous\": false\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/contributions",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "contributions"]
+              }
+            },
+            "response": []
+          }
+        ]
+      },
+      {
+        "name": "Bill Management",
+        "item": [
+          {
+            "name": "Create Bill",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"title\": \"Dinner Party\",\n  \"totalAmount\": 200,\n  \"shares\": [\n    { \"user\": \"60d1c6f2f0c5e222b8d0c6e4\", \"amount\": 50 },\n    { \"user\": \"60d1c6f2f0c5e222b8d0c6e5\", \"amount\": 50 }\n  ]\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/bills",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "bills"]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "Send Payment Requests",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}"
+                }
+              ],
+              "url": {
+                "raw": "{{baseUrl}}/api/bills/:billId/requests",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "bills", ":billId", "requests"]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "Track Bill Payments",
+            "request": {
+              "method": "GET",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}"
+                }
+              ],
+              "url": {
+                "raw": "{{baseUrl}}/api/bills/:billId",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "bills", ":billId"]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "Get User Bills",
+            "request": {
+              "method": "GET",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}"
+                }
+              ],
+              "url": {
+                "raw": "{{baseUrl}}/api/bills/user",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "bills", "user"]
+              }
+            },
+            "response": []
+          }
+        ]
+      },
+      {
+        "name": "Notifications",
+        "item": [
+          {
+            "name": "Send Email Notification",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"to\": \"user@example.com\",\n  \"subject\": \"Test Notification\",\n  \"text\": \"This is a test notification.\"\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/notifications/email",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "notifications", "email"]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "Send SMS Notification",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"to\": \"+1234567890\",\n  \"message\": \"This is a test SMS notification.\"\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/notifications/sms",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "notifications", "sms"]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "Send Push Notification",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"deviceToken\": \"device_token_here\",\n  \"title\": \"Test Push Notification\",\n  \"body\": \"This is a test push notification.\"\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/notifications/push",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "notifications", "push"]
+              }
+            },
+            "response": []
+          }
+        ]
+      },
+      {
+        "name": "Admin",
+        "item": [
+          {
+            "name": "Get All Users",
+            "request": {
+              "method": "GET",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{adminToken}}"
+                }
+              ],
+              "url": {
+                "raw": "{{baseUrl}}/api/admin/users",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "admin", "users"]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "Get All Campaigns",
+            "request": {
+              "method": "GET",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{adminToken}}"
+                }
+              ],
+              "url": {
+                "raw": "{{baseUrl}}/api/admin/campaigns",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "admin", "campaigns"]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "Block User",
+            "request": {
+              "method": "PUT",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{adminToken}}"
+                }
+              ],
+              "url": {
+                "raw": "{{baseUrl}}/api/admin/users/:userId/block",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "admin", "users", ":userId", "block"]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "Unblock User",
+            "request": {
+              "method": "PUT",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{adminToken}}"
+                }
+              ],
+              "url": {
+                "raw": "{{baseUrl}}/api/admin/users/:userId/unblock",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "admin", "users", ":userId", "unblock"]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "Approve Campaign",
+            "request": {
+              "method": "PUT",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{adminToken}}"
+                }
+              ],
+              "url": {
+                "raw": "{{baseUrl}}/api/admin/campaigns/:campaignId/approve",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "admin", "campaigns", ":campaignId", "approve"]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "Reject Campaign",
+            "request": {
+              "method": "PUT",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{adminToken}}"
+                }
+              ],
+              "url": {
+                "raw": "{{baseUrl}}/api/admin/campaigns/:campaignId/reject",
+                "host": ["{{baseUrl}}"],
+                "path": ["api", "admin", "campaigns", ":campaignId", "reject"]
+              }
+            },
+            "response": []
+          }
+        ]
+      }
+    ],
+    "variable": [
+      {
+        "key": "baseUrl",
+        "value": "http://localhost:5000"
+      },
+      {
+        "key": "token",
+        "value": ""
+      },
+      {
+        "key": "adminToken",
+        "value": ""
+      }
+    ]
+  }
+  

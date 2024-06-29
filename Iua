@@ -1,0 +1,81 @@
+campaign-platform/
+│
+├── src/
+│   ├── controllers/
+│   │   ├── authController.js
+│   │   ├── userController.js
+│   │   ├── campaignController.js
+│   │   ├── contributionController.js
+│   │   ├── billController.js
+│   │   ├── socialController.js
+│   │   ├── notificationController.js
+│   │   ├── adminController.js
+│   │   └── index.js
+│   │
+│   ├── models/
+│   │   ├── userModel.js
+│   │   ├── campaignModel.js
+│   │   ├── contributionModel.js
+│   │   ├── billModel.js
+│   │   ├── socialModel.js
+│   │   ├── notificationModel.js
+│   │   ├── adminModel.js
+│   │   └── index.js
+│   │
+│   ├── routes/
+│   │   ├── authRoutes.js
+│   │   ├── userRoutes.js
+│   │   ├── campaignRoutes.js
+│   │   ├── contributionRoutes.js
+│   │   ├── billRoutes.js
+│   │   ├── socialRoutes.js
+│   │   ├── notificationRoutes.js
+│   │   ├── adminRoutes.js
+│   │   └── index.js
+│   │
+│   ├── services/
+│   │   ├── authService.js
+│   │   ├── userService.js
+│   │   ├── campaignService.js
+│   │   ├── contributionService.js
+│   │   ├── billService.js
+│   │   ├── socialService.js
+│   │   ├── notificationService.js
+│   │   ├── adminService.js
+│   │   └── index.js
+│   │
+│   ├── middlewares/
+│   │   ├── authMiddleware.js
+│   │   ├── validationMiddleware.js
+│   │   └── errorHandlerMiddleware.js
+│   │
+│   ├── utils/
+│   │   ├── emailUtil.js
+│   │   ├── smsUtil.js
+│   │   ├── pushNotificationUtil.js
+│   │   └── index.js
+│   │
+│   ├── config/
+│   │   ├── dbConfig.js
+│   │   ├── appConfig.js
+│   │   └── index.js
+│   │
+│   ├── tests/
+│   │   ├── authTests.js
+│   │   ├── userTests.js
+│   │   ├── campaignTests.js
+│   │   ├── contributionTests.js
+│   │   ├── billTests.js
+│   │   ├── socialTests.js
+│   │   ├── notificationTests.js
+│   │   ├── adminTests.js
+│   │   └── index.js
+│   │
+│   ├── index.js
+│   └── server.js
+│
+├── .env
+├── .gitignore
+├── package.json
+├── package-lock.json
+└── README.md
