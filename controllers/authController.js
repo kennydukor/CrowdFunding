@@ -2,10 +2,11 @@ const User = require('../models/userModel');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { generateOTP, verifyOTP } = require('../utils/otpUtility'); // Import the OTP utility
+const { sendOTPEmail } = require('./notificationController');  // Import the email utility
 
-const generateOTP = () => {
-    return Math.floor(100000 + Math.random() * 900000).toString(); // Generate a 6-digit OTP
-};
+// const generateOTP = () => {
+//     return Math.floor(100000 + Math.random() * 900000).toString(); // Generate a 6-digit OTP
+// };
 
 exports.signup = async (req, res) => {
     const { email, password, firstName, middleName, lastName, gender, organizationName, userType, interests, role } = req.body;
@@ -63,7 +64,14 @@ exports.login = async (req, res) => {
         const payload = { userId: user._id, role: user.role };
         const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-        res.json({ token, userId: user._id, role: user.role });
+        res.json({ token, 
+            user: {
+                userId: user._id, 
+                firstName: user.firstName, 
+                lastName: user.lastName, 
+                email: user.email, 
+                role: user.role
+            } });
     } catch (err) {
         console.error(err);
         res.status(500).send('Server error');

@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { generateOTP, verifyOTP } = require('../utils/otpUtility'); // Import the OTP utility
-const { sendEmailNotification } = require('./notificationController'); // Import the notification controller
+const { sendOTPEmail } = require('./notificationController'); // Import the notification controller
 
 exports.updateProfile = async (req, res) => {
     const { firstName, middleName, lastName, bio, profilePicture, interests } = req.body;
@@ -35,8 +35,9 @@ exports.changePassword = async (req, res) => {
         const isMatch = await bcrypt.compare(oldPassword, user.password);
         if (!isMatch) return res.status(400).json({ msg: 'Incorrect old password' });
 
-        const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(newPassword, salt);
+        // const salt = await bcrypt.genSalt(10);
+        // user.password = await bcrypt.hash(newPassword, salt);
+        user.password = newPassword;
 
         await user.save();
         res.status(200).json({ msg: 'Password changed successfully' });

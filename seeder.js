@@ -23,16 +23,17 @@ const createAdminUser = async () => {
             return;
         }
 
-        // Create a new admin user
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD, salt);
+        // // Create a new admin user
+        // const salt = await bcrypt.genSalt(10);
+        // const hashedPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD, salt);
 
         adminUser = new User({
             email: process.env.ADMIN_EMAIL,
-            password: hashedPassword,
+            password: process.env.ADMIN_PASSWORD,
             firstName: 'Admin',
             lastName: 'User',
             role: 'admin',
+            userType: 'Admin',
             isVerified: true
         });
 

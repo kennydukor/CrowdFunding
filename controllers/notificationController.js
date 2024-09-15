@@ -1,8 +1,8 @@
 const axios = require('axios');
 const sgMail = require('@sendgrid/mail');
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 exports.sendEmailNotification = async ({ to, subject, text }, res) => {
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
     try {
         const msg = {
             to,
@@ -24,6 +24,7 @@ exports.sendEmailNotification = async ({ to, subject, text }, res) => {
 };
 
 exports.sendOTPEmail = async ({ email, firstName, otp }, res) => {
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
     try {
         const msg = {
             to: email,
