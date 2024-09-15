@@ -1,12 +1,16 @@
 const Campaign = require('../models/campaignModel');
 
 exports.startCampaign = async (req, res) => {
-    const { location, category, beneficiary } = req.body;
+    const { title, description, location, category, beneficiary, goalAmount, deadline } = req.body;
     try {
         const campaign = new Campaign({
+            title,
+            description,
             location,
             category,
             beneficiary,
+            goalAmount,
+            deadline,
             owner: req.userId,
         });
 

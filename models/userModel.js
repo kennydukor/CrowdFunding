@@ -11,9 +11,19 @@ const userSchema = new mongoose.Schema({
     lastName: { type: String },   // For individuals
     gender: { type: String },     // For individuals
     organizationName: { type: String }, // For non-profits
-    userType: { type: String, required: true }, // 'Individual' or 'Non-Profit'
+    // userType: { type: String, required: true }, // 'Individual' or 'Non-Profit'
+    userType: { 
+        type: String, 
+        required: true, 
+        enum: ['Individual', 'Non-Profit', 'Admin'] // Enum for user types
+    },
     interests: { type: [String] }, // Array of interests
-    role: { type: String, default: 'user' }, // 'user' or 'admin'
+    // role: { type: String, default: 'user' }, // 'user' or 'admin'
+    role: { 
+        type: String, 
+        default: 'user', 
+        enum: ['user', 'admin']  // Enum for roles
+    },
     resetPasswordToken: { type: String },
     resetPasswordExpire: { type: Date },
     otp: { type: String },
