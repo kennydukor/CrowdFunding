@@ -11,7 +11,6 @@ const userSchema = new mongoose.Schema({
     lastName: { type: String },   // For individuals
     gender: { type: String },     // For individuals
     organizationName: { type: String }, // For non-profits
-    // userType: { type: String, required: true }, // 'Individual' or 'Non-Profit'
     userType: { 
         type: String, 
         required: true, 
@@ -29,6 +28,12 @@ const userSchema = new mongoose.Schema({
     otp: { type: String },
     otpExpire: { type: Date },
     isVerified: { type: Boolean, default: false }, // New field for email verification
+    KYCStatus: {
+        type: String,
+        enum: ['pending', 'approved', 'rejected'],
+        default: 'pending'
+    },
+    KYCDocument: { type: String } // Optional: Link to their uploaded KYC document
 }, { timestamps: true });
 
 // Password hashing middleware

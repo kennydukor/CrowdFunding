@@ -1,16 +1,19 @@
 const Campaign = require('../models/campaignModel');
 
 exports.startCampaign = async (req, res) => {
-    const { title, description, location, category, beneficiary, goalAmount, deadline } = req.body;
+    const { title, description, location, category, beneficiary} = req.body;
     try {
+        // Do not start campaign if user is not verified and if KYC is pending
+        if (!req.user.verified || req.user.kycStatus === 'pending') {
+            return res.status(400).json({ msg: 'You cannot start a campaign. Verify your account and complete KYC.' });
+        }
+
         const campaign = new Campaign({
             title,
             description,
             location,
             category,
             beneficiary,
-            goalAmount,
-            deadline,
             owner: req.userId,
         });
 
@@ -23,7 +26,7 @@ exports.startCampaign = async (req, res) => {
 };
 
 exports.setGoal = async (req, res) => {
-    const { goalAmount, deadline } = req.body;
+    const { goalAmount, deadline, currency } = req.body;
     try {
         const campaign = await Campaign.findById(req.params.campaignId);
         if (!campaign) return res.status(404).json({ msg: 'Campaign not found' });
@@ -32,6 +35,7 @@ exports.setGoal = async (req, res) => {
             return res.status(401).json({ msg: 'User not authorized' });
         }
 
+        campaign.currency = currency;
         campaign.goalAmount = goalAmount;
         campaign.deadline = deadline;
 
@@ -150,6 +154,22 @@ exports.updateCampaign = async (req, res) => {
 
         await campaign.save();
         res.json(campaign);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server error');
+    }
+};
+
+exports.reviewCampaign = async (req, res) => {
+    const { campaignId, action } = req.body; // action: 'approve' or 'reject'
+    try {
+        const campaign = await Campaign.findById(campaignId);
+        if (!campaign) return res.status(404).json({ msg: 'Campaign not found' });
+
+        campaign.status = action === 'approve' ? 'approved' : 'rejected';
+        await campaign.save();
+
+        res.status(200).json({ msg: `Campaign ${action}d successfully` });
     } catch (err) {
         console.error(err);
         res.status(500).send('Server error');
