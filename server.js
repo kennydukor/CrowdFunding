@@ -38,10 +38,11 @@ mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log('MongoDB Connected...'))
     .catch(err => console.error('MongoDB Connection Error;', err.message));
 
-// COMMENT THIS OUT IF NOT USING VERCEL
-module.exports = app;
-
-//UNCOMMENT IF USING AWS OR AZURE OR GCP
-// Start server
-// const PORT = process.env.PORT || 5600;
-// app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// Local vs Serverless
+if (process.env.NODE_ENV === 'development') {
+    const PORT = process.env.PORT || 5600;
+    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+  } else {
+    // COMMENT THIS OUT IF NOT USING VERCEL
+    module.exports = app; // Export the app for serverless environments like Vercel
+  }
