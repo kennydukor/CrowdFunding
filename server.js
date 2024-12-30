@@ -28,22 +28,22 @@ app.get('/', (req, res) => {
     res.status(200).send('Server is healthy');
   });
 
-// Route Middleware
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/campaigns', campaignRoutes);
-app.use('/api/contributions', contributionRoutes);
-app.use('/api/bills', billRoutes);
-app.use('/api/social', socialRoutes);
-app.use('/api/notifications', notificationRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/payments', paymentRoutes);
+// // Route Middleware
+// app.use('/api/auth', authRoutes);
+// app.use('/api/users', userRoutes);
+// app.use('/api/campaigns', campaignRoutes);
+// app.use('/api/contributions', contributionRoutes);
+// app.use('/api/bills', billRoutes);
+// app.use('/api/social', socialRoutes);
+// app.use('/api/notifications', notificationRoutes);
+// app.use('/api/admin', adminRoutes);
+// app.use('/api/payments', paymentRoutes);
 
-// Connect to MongoDB
-// mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log('MongoDB Connected...'))
-    .catch(err => console.error('MongoDB Connection Error;', err.message));
+// // Connect to MongoDB
+// // mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+// mongoose.connect(process.env.MONGO_URI)
+//     .then(() => console.log('MongoDB Connected...'))
+//     .catch(err => console.error('MongoDB Connection Error;', err.message));
 
 // Local vs Serverless
 if (process.env.NODE_ENV === 'development') {
