@@ -60,7 +60,7 @@ campaign-platform/
 │   │   ├── appConfig.js
 │   │   └── index.js
 │   │
-│   ├── tests/
+│   ├── unit-tests/
 │   │   ├── authTests.js
 │   │   ├── userTests.js
 │   │   ├── campaignTests.js
