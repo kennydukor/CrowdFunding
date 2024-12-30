@@ -37,6 +37,10 @@ mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopol
     .then(() => console.log('MongoDB Connected...'))
     .catch(err => console.error(err));
 
+// COMMENT THIS OUT IF NOT USING VERCEL
+module.exports = app;
+
+//UNCOMMENT IF USING AWS OR AZURE OR GCP
 // Start server
-const PORT = process.env.PORT || 5600;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// const PORT = process.env.PORT || 5600;
+// app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
