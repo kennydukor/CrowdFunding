@@ -5,6 +5,18 @@ const crypto = require('crypto');
 const { generateOTP, verifyOTP } = require('../utils/otpUtility'); // Import the OTP utility
 const { sendOTPEmail } = require('./notificationController'); // Import the notification controller
 
+exports.getProfile = async (req, res) => {
+    try {
+        const user = await User.findById(req.userId).select('-password -otp -otpExpire -resetPasswordToken -resetPasswordExpire'); // Exclude sensitive fields
+        if (!user) return res.status(404).json({ msg: 'User not found' });
+
+        res.status(200).json(user);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server error');
+    }
+};
+
 exports.updateProfile = async (req, res) => {
     const { firstName, middleName, lastName, bio, profilePicture, interests } = req.body;
     try {
