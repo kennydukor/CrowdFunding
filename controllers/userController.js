@@ -30,8 +30,11 @@ exports.updateProfile = async (req, res) => {
         user.profilePicture = profilePicture || user.profilePicture;
         user.interests = interests || user.interests;
 
-        await user.save();
-        res.status(200).json(user);
+        // Remove sensitive fields before returning the response
+        const userResponse = user.toObject();
+        delete userResponse.password;
+
+        res.status(200).json(userResponse);
     } catch (err) {
         console.error(err);
         res.status(500).send('Server error');

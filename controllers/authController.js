@@ -8,14 +8,17 @@ const { sendOTPEmail } = require('./notificationController');  // Import the ema
 //     return Math.floor(100000 + Math.random() * 900000).toString(); // Generate a 6-digit OTP
 // };
 
+const OTP_EXPIRY_TIME = process.env.OTP_EXPIRY_TIME || 300000; // Default to 5 minutes
+
+
 exports.signup = async (req, res) => {
     const { email, password, firstName, middleName, lastName, gender, organizationName, userType, interests, role } = req.body;
     try {
         let user = await User.findOne({ email });
-        if (user) return res.status(400).json({ msg: 'User already exists' });
+        if (user) return res.status(409).json({ msg: 'User already exists' });
 
         const otp = generateOTP();
-        const otpExpire = Date.now() + 300000; // 5 minutes
+        const otpExpire = Date.now() + OTP_EXPIRY_TIME; // 5 minutes
 
         user = new User({ email, password, firstName, middleName, lastName, gender, organizationName, userType, interests, role, otp, otpExpire });
         await user.save();
@@ -30,11 +33,47 @@ exports.signup = async (req, res) => {
     }
 };
 
+exports.resendOTP = async (req, res) => {
+    const { email } = req.body;
+
+    try {
+        // Find the user by email
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ msg: 'User not found' });
+
+        // Check if the user is already verified
+        if (user.isVerified) {
+            return res.status(400).json({ msg: 'User is already verified' });
+        }
+
+        // Generate a new OTP and set its expiration time
+        const otp = generateOTP();
+        user.otp = otp;
+        user.otpExpire = Date.now() + OTP_EXPIRY_TIME; // 5 minutes
+
+        // Save the updated user
+        await user.save();
+
+        // Resend the OTP email
+        await sendOTPEmail({ email: user.email, firstName: user.firstName, otp }, res);
+
+        res.status(200).json({ msg: 'OTP resent successfully. Please check your email.' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server error');
+    }
+};
+
+
 exports.verifyOTP = async (req, res) => {
     const { email, otp } = req.body;
     try {
         const user = await User.findOne({ email });
         if (!user) return res.status(404).json({ msg: 'User not found' });
+
+        if (user.isVerified) {
+            return res.status(400).json({ msg: 'Email is already verified' });
+        }
 
         if (!verifyOTP(user, otp)) {
             return res.status(400).json({ msg: 'Invalid or expired OTP' });
@@ -58,6 +97,10 @@ exports.login = async (req, res) => {
         const user = await User.findOne({ email });
         if (!user) return res.status(400).json({ msg: 'Invalid credentials' });
 
+        if (!user.isVerified) {
+            return res.status(400).json({ msg: 'Please verify your email before logging in' });
+        }
+
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(400).json({ msg: 'Invalid credentials' });
 
@@ -77,3 +120,15 @@ exports.login = async (req, res) => {
         res.status(500).send('Server error');
     }
 };
+
+exports.deleteUnverifiedUsers = async (req, res) => {
+    const expirationTime = Date.now() - 60 * 24 * 60 * 60 * 1000; // 60 days ago
+    try {
+        const result = await User.deleteMany({ isVerified: false, createdAt: { $lt: expirationTime } });
+        res.status(200).json({ msg: `Deleted ${result.deletedCount} unverified users.` });
+    } catch (err) {
+        console.error('Error deleting unverified users:', err);
+        res.status(500).send('Server error');
+    }
+};
+
