@@ -21,11 +21,13 @@ const app = express();
 // Middleware
 
 // CORS Middleware
-app.use(cors({
-  origin: '*', // Replace '*' with the specific frontend URL in production for better security
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], // Allowed methods
-  allowedHeaders: ['Content-Type', 'Authorization'], // Allowed headers
-}));
+app.use(
+  cors({
+    origin: '*', // Replace '*' with the specific frontend URL in production for better security
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], // Allowed methods
+    allowedHeaders: ['Content-Type', 'Authorization'], // Allowed headers
+  }),
+);
 
 // app.use(express.json());
 app.use(express.json({ limit: '10mb' }));
@@ -34,8 +36,8 @@ app.use(morgan('dev'));
 
 // Health Check Route
 app.get('/', (req, res) => {
-    res.status(200).send('Server is healthy');
-  });
+  res.status(200).send('Server is healthy');
+});
 
 // Route Middleware
 app.use('/api/auth', authRoutes);
@@ -48,17 +50,35 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/payments', paymentRoutes);
 
+app.all('*', (req, res, next) => {
+  return next(new Error('Route not found'));
+});
+
+app.use((err, req, res, next) => {
+  console.error(`Error: ${err.message}\nStack: ${err.stack}`);
+
+  const status = err.status || 500;
+  const isDevelopment = process.env.NODE_ENV === 'development';
+
+  return res.status(status).json({
+    success: false,
+    message: err.message || 'Something went wrong',
+    ...(isDevelopment && { stack: err.stack }),
+  });
+});
+
 // Connect to MongoDB
 // mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log('MongoDB Connected...'))
-    .catch(err => console.error('MongoDB Connection Error;', err.message));
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log('MongoDB Connected...'))
+  .catch((err) => console.error('MongoDB Connection Error;', err.message));
 
 // Local vs Serverless
 if (process.env.NODE_ENV === 'development') {
-    const PORT = process.env.PORT || 5600;
-    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-  } else {
-    // COMMENT THIS OUT IF NOT USING VERCEL
-    module.exports = app; // Export the app for serverless environments like Vercel
-  }
+  const PORT = process.env.PORT || 5600;
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+} else {
+  // COMMENT THIS OUT IF NOT USING VERCEL
+  module.exports = app; // Export the app for serverless environments like Vercel
+}
