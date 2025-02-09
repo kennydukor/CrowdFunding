@@ -13,6 +13,9 @@ const adminMiddleware = (req, res, next) => {
         }
         next();
     } catch (err) {
+        if (err.name === 'TokenExpiredError') {
+            return res.status(401).json({ msg: 'Token has expired, please log in again' });
+        }
         res.status(401).json({ msg: 'Token is not valid' });
     }
 };

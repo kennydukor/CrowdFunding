@@ -45,7 +45,7 @@ exports.resendOTP = async (req, res) => {
 
         // Check if the user is already verified
         if (user.isVerified) {
-            return res.status(400).json({ msg: 'User is already verified' });
+            return res.status(409).json({ msg: 'User is already verified' });
         }
 
         // Generate a new OTP and set its expiration time
@@ -76,11 +76,11 @@ exports.verifyOTP = async (req, res) => {
         if (!user) return res.status(404).json({ msg: 'User not found' });
 
         if (user.isVerified) {
-            return res.status(400).json({ msg: 'Email is already verified' });
+            return res.status(409).json({ msg: 'Email is already verified' });
         }
 
         if (!verifyOTP(user, otp)) {
-            return res.status(400).json({ msg: 'Invalid or expired OTP' });
+            return res.status(401).json({ msg: 'Invalid or expired OTP' });
         }
 
         user.otp = undefined;
@@ -99,14 +99,14 @@ exports.login = async (req, res) => {
     const { email, password } = req.body;
     try {
         const user = await User.findOne({ email });
-        if (!user) return res.status(400).json({ msg: 'Invalid credentials' });
+        if (!user) return res.status(401).json({ msg: 'Invalid credentials' });
 
         if (!user.isVerified) {
-            return res.status(400).json({ msg: 'Please verify your email before logging in' });
+            return res.status(403).json({ msg: 'Please verify your email before logging in' });
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) return res.status(400).json({ msg: 'Invalid credentials' });
+        if (!isMatch) return res.status(401).json({ msg: 'Invalid credentials' });
 
         const payload = { userId: user._id, role: user.role };
         const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });

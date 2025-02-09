@@ -53,7 +53,7 @@ exports.sendOTPEmail = async (user) => {
             to: user.email,
             from: process.env.SENDGRID_EMAIL_FROM,
             subject: 'Your OTP Code',
-            text: `Hello ${user.firstName},\n\nYour OTP code is ${user.otp}. It will expire in 5 minutes.\n\nBest regards,\nThe Crowdr Team`,
+            text: `Hello ${user.firstName},\n\nYour OTP code is ${user.otp}. It will expire in 5 minutes.\n\nBest regards,\nThe Raizefund Team`,
         };
 
         await sgMail.send(msg);
