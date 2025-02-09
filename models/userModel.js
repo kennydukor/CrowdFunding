@@ -16,7 +16,7 @@ const userSchema = new mongoose.Schema({
         required: true, 
         enum: ['Individual', 'Non-Profit', 'Admin'] // Enum for user types
     },
-    interests: { type: [String] }, // Array of interests
+    interests: { type: [String], default: [] }, // Array of interests
     // role: { type: String, default: 'user' }, // 'user' or 'admin'
     role: { 
         type: String, 

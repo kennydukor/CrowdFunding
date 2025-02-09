@@ -2,7 +2,7 @@ const User = require('../models/userModel');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { generateOTP, verifyOTP } = require('../utils/otpUtility');
-const { sendOTPEmail } = require('./notificationController');
+const { sendOTPEmail, sendWelcomeEmail } = require('./notificationController');
 
 // const generateOTP = () => {
 //     return Math.floor(100000 + Math.random() * 900000).toString(); // Generate a 6-digit OTP
@@ -88,6 +88,12 @@ exports.verifyOTP = async (req, res) => {
         user.isVerified = true;
 
         await user.save();
+
+        // ✅ Send a welcome email after successful verification
+        const welcomeResponse = await sendWelcomeEmail(user);
+        if (!welcomeResponse.success) {
+            console.error('Failed to send welcome email:', welcomeResponse.error);
+        }
         res.status(200).json({ msg: 'Email verified successfully' });
     } catch (err) {
         console.error(err);

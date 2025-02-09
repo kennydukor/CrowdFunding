@@ -1,5 +1,5 @@
 const axios = require('axios');
-const Bill = require('../models/billModel');
+const Bill = require('../models/privateCampaignModel');
 const Contribution = require('../models/contributionModel');
 const { sendEmailNotification } = require('./notificationController'); // Import the notification controller
 

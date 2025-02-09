@@ -64,6 +64,24 @@ exports.sendOTPEmail = async (user) => {
     }
 };
 
+exports.sendWelcomeEmail = async (user) => {
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+    try {
+        const msg = {
+            to: user.email,
+            from: process.env.SENDGRID_EMAIL_FROM,
+            subject: 'Welcome to Raizefund!',
+            text: `Hello ${user.firstName},\n\nWelcome to Raizefund! We're excited to have you onboard.\n\nBest regards,\nThe Raizefund Team`,
+        };
+
+        await sgMail.send(msg);
+        return { success: true };
+    } catch (error) {
+        console.error('Error sending welcome email:', error);
+        return { success: false, error: 'Error sending welcome email' };
+    }
+};
+
 // Send SMS notification
 exports.sendSMSNotification = async (req, res) => {
     const { to, message } = req.body;

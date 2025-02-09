@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const billSchema = new mongoose.Schema({
+const privateCampaignSchema = new mongoose.Schema({
     title: { type: String, required: true },
     totalAmount: { type: Number, required: true },
     shares: [
@@ -13,6 +13,6 @@ const billSchema = new mongoose.Schema({
     creator: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
 }, { timestamps: true });
 
-const Bill = mongoose.model('Bill', billSchema);
+const PrivateCampaign = mongoose.model('PrivateCampaign', privateCampaignSchema);
 
-module.exports = Bill;
+module.exports = PrivateCampaign;

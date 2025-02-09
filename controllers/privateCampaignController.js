@@ -1,40 +1,41 @@
-// Bill Sharing Program
-const Bill = require('../models/billModel');
+const PrivateCampaign = require('../models/privateCampaignModel');
 const axios = require('axios');
 const { sendEmailNotification } = require('./notificationController'); // Import the notification controller
 
-exports.createBill = async (req, res) => {
+// ✅ Create a Private Campaign
+exports.createPrivateCampaign = async (req, res) => {
     const { title, totalAmount, shares } = req.body;
     try {
-        const bill = new Bill({
+        const campaign = new PrivateCampaign({
             title,
             totalAmount,
             shares,
             creator: req.userId,
         });
 
-        await bill.save();
-        res.status(201).json(bill);
+        await campaign.save();
+        res.status(201).json(campaign);
     } catch (err) {
         console.error(err);
         res.status(500).send('Server error');
     }
 };
 
+// ✅ Send Payment Requests for a Private Campaign
 exports.sendPaymentRequests = async (req, res) => {
     try {
-        const bill = await Bill.findById(req.params.billId).populate('shares.user');
-        if (!bill) return res.status(404).json({ msg: 'Bill not found' });
+        const campaign = await PrivateCampaign.findById(req.params.campaignId).populate('shares.user');
+        if (!campaign) return res.status(404).json({ msg: 'Private campaign not found' });
 
-        for (const share of bill.shares) {
-            const paymentLink = await generatePaymentLink(share.amount, share.user.email, `Bill payment for ${bill.title}`, bill._id);
+        for (const share of campaign.shares) {
+            const paymentLink = await generatePaymentLink(share.amount, share.user.email, `Payment for ${campaign.title}`, campaign._id);
 
             // Send payment request email
             await sendEmailNotification({
                 body: {
                     to: share.user.email,
                     subject: 'Payment Request',
-                    text: `Hello ${share.user.firstName},\n\nYou have a pending payment of ${share.amount} for the bill titled "${bill.title}". Please make the payment using the following link:\n\n${paymentLink}\n\nThank you!`,
+                    text: `Hello ${share.user.firstName},\n\nYou have a pending payment of ${share.amount} for the campaign titled "${campaign.title}". Please make the payment using the following link:\n\n${paymentLink}\n\nThank you!`,
                 }
             });
         }
@@ -46,12 +47,13 @@ exports.sendPaymentRequests = async (req, res) => {
     }
 };
 
-const generatePaymentLink = async (amount, email, description, billId) => {
+// ✅ Generate Payment Link
+const generatePaymentLink = async (amount, email, description, campaignId) => {
     try {
         const response = await axios.post('https://api.paystack.co/transaction/initialize', {
             amount: amount * 100, // Amount in kobo
             email,
-            reference: `${billId}_${Date.now()}`,
+            reference: `${campaignId}_${Date.now()}`,
             callback_url: 'http://localhost:5000/api/payments/paystack/verify',
             metadata: {
                 custom_fields: [
@@ -76,22 +78,24 @@ const generatePaymentLink = async (amount, email, description, billId) => {
     }
 };
 
-exports.trackBillPayments = async (req, res) => {
+// ✅ Track Payments for a Private Campaign
+exports.trackCampaignPayments = async (req, res) => {
     try {
-        const bill = await Bill.findById(req.params.billId);
-        if (!bill) return res.status(404).json({ msg: 'Bill not found' });
+        const campaign = await PrivateCampaign.findById(req.params.campaignId);
+        if (!campaign) return res.status(404).json({ msg: 'Private campaign not found' });
 
-        res.json(bill);
+        res.json(campaign);
     } catch (err) {
         console.error(err);
         res.status(500).send('Server error');
     }
 };
 
-exports.getUserBills = async (req, res) => {
+// ✅ Get User's Private Campaigns
+exports.getUserCampaigns = async (req, res) => {
     try {
-        const bills = await Bill.find({ 'shares.user': req.userId });
-        res.json(bills);
+        const campaigns = await PrivateCampaign.find({ 'shares.user': req.userId });
+        res.json(campaigns);
     } catch (err) {
         console.error(err);
         res.status(500).send('Server error');

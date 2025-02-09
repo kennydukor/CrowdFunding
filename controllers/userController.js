@@ -1,9 +1,8 @@
 const User = require('../models/userModel');
-const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const crypto = require('crypto');
 const { generateOTP, verifyOTP } = require('../utils/otpUtility'); // Import the OTP utility
 const { sendOTPEmail } = require('./notificationController'); // Import the notification controller
+const cloudinary = require('../utils/cloudinary');
 
 const OTP_EXPIRY_TIME = process.env.OTP_EXPIRY_TIME || 300000; // Default to 5 minutes
 
@@ -20,17 +19,32 @@ exports.getProfile = async (req, res) => {
 };
 
 exports.updateProfile = async (req, res) => {
-    const { firstName, middleName, lastName, bio, profilePicture, interests } = req.body;
+    const { firstName, middleName, lastName, bio, interests } = req.body;
     try {
         let user = await User.findById(req.userId);
         if (!user) return res.status(404).json({ msg: 'User not found' });
 
+        // Handle Profile Picture Upload (Square Cropped)
+        if (req.file) {
+            // Before uploading the new profile picture, delete the old one if exists
+            if (user.profilePicture) {
+                const public_id = user.profilePicture.split('/').pop().split('.')[0]; // Get the public_id from the URL
+                await cloudinary.uploader.destroy(`profile_pictures/${public_id}`); // Destroy the old image
+            }
+
+            user.profilePicture = req.file.path; // Already transformed and uploaded by the middleware
+        }
+        
         user.firstName = firstName || user.firstName;
         user.middleName = middleName || user.middleName;
         user.lastName = lastName || user.lastName;
         user.bio = bio || user.bio;
-        user.profilePicture = profilePicture || user.profilePicture;
-        user.interests = interests || user.interests;
+        
+        // Ensure interests is always an array
+        if (interests) {
+            user.interests = Array.isArray(interests) ? interests : interests.split(',').map(item => item.trim());
+        }
+        await user.save();
 
         // Remove sensitive fields before returning the response
         const userResponse = user.toObject();
