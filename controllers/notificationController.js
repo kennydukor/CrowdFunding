@@ -1,5 +1,9 @@
 const axios = require('axios');
 const sgMail = require('@sendgrid/mail');
+const User = require('../models/userModel');
+
+const OTP_REQUEST_LIMIT = 3;  // Max OTP requests within time window
+const OTP_TIME_WINDOW = 10 * 60 * 1000;  // 10 minutes in milliseconds
 
 exports.sendEmailNotification = async ({ to, subject, text }, res) => {
     sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -23,25 +27,40 @@ exports.sendEmailNotification = async ({ to, subject, text }, res) => {
     }
 };
 
-exports.sendOTPEmail = async ({ email, firstName, otp }, res) => {
+exports.sendOTPEmail = async (user) => {
     sgMail.setApiKey(process.env.SENDGRID_API_KEY);
     try {
+        const currentTime = Date.now();
+
+        // Check if user has exceeded OTP requests within the time window
+        if (user.otpRequestTimestamp && (currentTime - user.otpRequestTimestamp < OTP_TIME_WINDOW)) {
+            if (user.otpRequestCount >= OTP_REQUEST_LIMIT) {
+                return { success: false, error: 'Too many OTP requests. Please try again later.' };
+            }
+        } else {
+            // Reset count if outside the time window
+            user.otpRequestCount = 0;
+        }
+
+        // Increase the counter and update timestamp
+        user.otpRequestCount += 1;
+        user.otpRequestTimestamp = currentTime;
+
+        // Save the user with updated OTP fields
+        await user.save();
+
         const msg = {
-            to: email,
+            to: user.email,
             from: process.env.SENDGRID_EMAIL_FROM,
             subject: 'Your OTP Code',
-            text: `Hello ${firstName},\n\nYour OTP code is ${otp}. It will expire in 5 minutes.\n\nBest regards,\nThe Crowdr Team`,
+            text: `Hello ${user.firstName},\n\nYour OTP code is ${user.otp}. It will expire in 5 minutes.\n\nBest regards,\nThe Crowdr Team`,
         };
 
         await sgMail.send(msg);
-        if (res) {
-            res.status(200).json({ msg: 'OTP sent to email' });
-        }
+        return { success: true };
     } catch (error) {
-        console.error(error);
-        if (res) {
-            res.status(500).send('Error sending OTP email');
-        }
+        console.error('Error sending OTP email:', error);
+        return { success: false, error: 'Error sending OTP email' };
     }
 };
 

@@ -33,7 +33,9 @@ const userSchema = new mongoose.Schema({
         enum: ['pending', 'approved', 'rejected'],
         default: 'pending'
     },
-    KYCDocument: { type: String } // Optional: Link to their uploaded KYC document
+    KYCDocument: { type: String }, // Optional: Link to their uploaded KYC document
+    otpRequestCount: { type: Number, default: 0 },  // Number of OTP requests
+    otpRequestTimestamp: { type: Date }  // Last OTP request time
 }, { timestamps: true });
 
 // Password hashing middleware

@@ -5,6 +5,8 @@ const crypto = require('crypto');
 const { generateOTP, verifyOTP } = require('../utils/otpUtility'); // Import the OTP utility
 const { sendOTPEmail } = require('./notificationController'); // Import the notification controller
 
+const OTP_EXPIRY_TIME = process.env.OTP_EXPIRY_TIME || 300000; // Default to 5 minutes
+
 exports.getProfile = async (req, res) => {
     try {
         const user = await User.findById(req.userId).select('-password -otp -otpExpire -resetPasswordToken -resetPasswordExpire'); // Exclude sensitive fields
@@ -67,20 +69,23 @@ exports.forgotPassword = async (req, res) => {
         if (!user) return res.status(404).json({ msg: 'User not found' });
 
         const otp = generateOTP();
-        const otpExpire = Date.now() + 300000; // 5 minutes
+        const otpExpire = Date.now() + OTP_EXPIRY_TIME;
 
         user.otp = otp;
         user.otpExpire = otpExpire;
 
         await user.save();
 
-        // Send OTP email for password reset
-        await sendOTPEmail({ email, firstName: user.firstName, otp }, res);
+       // Send OTP email and check if it was successful
+        const otpResponse = await sendOTPEmail(user);
 
+        if (!otpResponse.success) {
+            return res.status(500).json({ msg: otpResponse.error });
+        }
         res.status(200).json({ msg: 'OTP sent for password reset' });
     } catch (err) {
-        console.error(err);
-        res.status(500).send('Error sending OTP');
+        console.error('Forgot Password error:', err);
+        res.status(500).json({ msg: 'Server error' });
     }
 };
 

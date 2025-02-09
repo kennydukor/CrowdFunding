@@ -1,15 +1,14 @@
 const User = require('../models/userModel');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const { generateOTP, verifyOTP } = require('../utils/otpUtility'); // Import the OTP utility
-const { sendOTPEmail } = require('./notificationController');  // Import the email utility
+const { generateOTP, verifyOTP } = require('../utils/otpUtility');
+const { sendOTPEmail } = require('./notificationController');
 
 // const generateOTP = () => {
 //     return Math.floor(100000 + Math.random() * 900000).toString(); // Generate a 6-digit OTP
 // };
 
 const OTP_EXPIRY_TIME = process.env.OTP_EXPIRY_TIME || 300000; // Default to 5 minutes
-
 
 exports.signup = async (req, res) => {
     const { email, password, firstName, middleName, lastName, gender, organizationName, userType, interests, role } = req.body;
@@ -18,17 +17,20 @@ exports.signup = async (req, res) => {
         if (user) return res.status(409).json({ msg: 'User already exists' });
 
         const otp = generateOTP();
-        const otpExpire = Date.now() + OTP_EXPIRY_TIME; // 5 minutes
+        const otpExpire = Date.now() + OTP_EXPIRY_TIME;
 
         user = new User({ email, password, firstName, middleName, lastName, gender, organizationName, userType, interests, role, otp, otpExpire });
         await user.save();
 
-        // Send OTP email
-        await sendOTPEmail({ email, firstName, otp }, res);
+        // Send OTP email and check if it was successful
+        const otpResponse = await sendOTPEmail(user);
 
+        if (!otpResponse.success) {
+            return res.status(500).json({ msg: otpResponse.error });
+        }
         res.status(201).json({ msg: 'OTP sent to email' });
     } catch (err) {
-        console.error(err);
+        console.error('Signup error:', err);
         res.status(500).send('Server error');
     }
 };
@@ -49,21 +51,23 @@ exports.resendOTP = async (req, res) => {
         // Generate a new OTP and set its expiration time
         const otp = generateOTP();
         user.otp = otp;
-        user.otpExpire = Date.now() + OTP_EXPIRY_TIME; // 5 minutes
+        user.otpExpire = Date.now() + OTP_EXPIRY_TIME;
 
         // Save the updated user
         await user.save();
 
-        // Resend the OTP email
-        await sendOTPEmail({ email: user.email, firstName: user.firstName, otp }, res);
+        // Resend the OTP email and check if it was successful
+        const otpResponse = await sendOTPEmail(user);
 
+        if (!otpResponse.success) {
+            return res.status(500).json({ msg: otpResponse.error });
+        }
         res.status(200).json({ msg: 'OTP resent successfully. Please check your email.' });
     } catch (err) {
-        console.error(err);
+        console.error('Resend OTP error:', err);
         res.status(500).send('Server error');
     }
 };
-
 
 exports.verifyOTP = async (req, res) => {
     const { email, otp } = req.body;
