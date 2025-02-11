@@ -76,7 +76,7 @@ exports.addMedia = async (req, res) => {
 };
 
 exports.setStory = async (req, res) => {
-    const { title, story } = req.body;
+    const { story } = req.body;
     try {
         const campaign = await Campaign.findById(req.params.campaignId);
         if (!campaign) return res.status(404).json({ msg: 'Campaign not found' });
@@ -85,7 +85,6 @@ exports.setStory = async (req, res) => {
             return res.status(401).json({ msg: 'User not authorized' });
         }
 
-        campaign.title = title;
         campaign.story = story;
 
         await campaign.save();
