@@ -11,7 +11,7 @@ exports.startCampaign = async (req, res) => {
         }
 
         // Check if the user is verified and KYC is not pending
-        if (!user.verified || user.KYCStatus === 'pending') {
+        if (!user.isVerified || user.KYCStatus === 'pending') {
             return res.status(400).json({ msg: 'You cannot start a campaign. Verify your account and complete KYC.' });
         }
 
