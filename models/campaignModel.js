@@ -3,9 +3,9 @@ const mongoose = require('mongoose');
 const campaignSchema = new mongoose.Schema({
     title: { type: String, required: true },
     description: { type: String, required: true },
-    goalAmount: { type: Number, required: true },
+    goalAmount: { type: Number, required: false },
     raisedAmount: { type: Number, default: 0 },
-    deadline: { type: Date, required: true },
+    deadline: { type: Date, required: false },
     // category: { type: String, required: true },
     category: { 
         type: String, 
@@ -23,7 +23,7 @@ const campaignSchema = new mongoose.Schema({
     },
     currency: {
         type: String,
-        required: true,
+        required: false,
         enum: [
             'GHS',  // Ghana Cedi
             'NGN',  // Nigerian Naira
