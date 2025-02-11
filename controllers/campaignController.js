@@ -1,10 +1,17 @@
 const Campaign = require('../models/campaignModel');
+const User = require('../models/userModel');
 
 exports.startCampaign = async (req, res) => {
     const { title, description, location, category, beneficiary} = req.body;
     try {
-        // Do not start campaign if user is not verified and if KYC is pending
-        if (!req.user.verified || req.user.kycStatus === 'pending') {
+        // Get the user from the database using the userId from the request
+        const user = await User.findById(req.userId);
+        if (!user) {
+            return res.status(404).json({ msg: 'User not found' });
+        }
+
+        // Check if the user is verified and KYC is not pending
+        if (!user.verified || user.kycStatus === 'pending') {
             return res.status(400).json({ msg: 'You cannot start a campaign. Verify your account and complete KYC.' });
         }
 
