@@ -27,6 +27,10 @@ const getStorage = (folderName) => {
 const uploadProfilePicture = multer({ storage: getStorage('profile_pictures') });
 
 // Middleware for other media uploads (e.g., documents, videos, general images)
-const uploadMedia = multer({ storage: getStorage('media_uploads') });
+const uploadMedia = multer({ 
+    storage: multer.memoryStorage(), 
+    limits: { fileSize: 1 * 1024 * 1024 } // Limit files to 1MB each
+  });
+// const uploadMedia = multer({ storage: getStorage('media_uploads') });
 
 module.exports = { uploadProfilePicture, uploadMedia };

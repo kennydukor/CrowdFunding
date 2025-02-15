@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const CampaignEnums = require('../utils/campaignEnums');
 
 const campaignSchema = new mongoose.Schema({
     title: { type: String, required: true },
@@ -6,40 +7,23 @@ const campaignSchema = new mongoose.Schema({
     goalAmount: { type: Number, required: false },
     raisedAmount: { type: Number, default: 0 },
     deadline: { type: Date, required: false },
-    // category: { type: String, required: true },
     category: { 
         type: String, 
         required: true, 
-        enum: ['Health', 'Education', 'Environment', 'Emergency', 'Community'] // Add relevant categories
+        enum: CampaignEnums.categories
     },
-    media: [{ type: String }],
+    media: { type: [String], default: [] },  // Use this field for all extra images
     owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     location: { type: String, required: true },
-    // beneficiary: { type: String, required: true }, // 'Yourself', 'Someone else', 'Charity'
     beneficiary: { 
         type: String, 
         required: true, 
-        enum: ['Yourself', 'Someone else', 'Charity']  // Beneficiary enum
+        enum: CampaignEnums.beneficiaries
     },
     currency: {
         type: String,
         required: false,
-        enum: [
-            'GHS',  // Ghana Cedi
-            'NGN',  // Nigerian Naira
-            'GBP',  // British Pound
-            'CAD',  // Canadian Dollar
-            'USD',  // US Dollar
-            'EUR',  // Euro (for Germany)
-            'KES',  // Kenyan Shilling
-            'ZAR',  // South African Rand
-            'RWF',  // Rwandan Franc
-            'ETB',  // Ethiopian Birr
-            'EGP',  // Egyptian Pound
-            'SLL',  // Sierra Leonean Leone
-            'LRD',  // Liberian Dollar
-            // Add more serious African currencies as needed
-        ]
+        enum: CampaignEnums.currencies
     },
     story: { type: String },
     coverPhoto: { type: String },
