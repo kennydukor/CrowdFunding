@@ -51,7 +51,7 @@ exports.startCampaign = async (req, res) => {
 };
 
 exports.setGoal = async (req, res) => {
-    const { goalAmount, deadline } = req.body;
+    const { goalAmount, deadline, currency } = req.body;
     try {
         const campaign = await Campaign.findById(req.params.campaignId);
         if (!campaign) return res.status(404).json({ msg: 'Campaign not found' });
