@@ -1,4 +1,4 @@
-const User = require('../models/userModel');
+const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { generateOTP, verifyOTP } = require('../utils/otpUtility');
@@ -13,18 +13,29 @@ const OTP_EXPIRY_TIME = process.env.OTP_EXPIRY_TIME || 300000; // Default to 5 m
 exports.signup = async (req, res) => {
     const { email, password, firstName, middleName, lastName, gender, organizationName, userType, interests, role } = req.body;
     try {
-        let user = await User.findOne({ email });
+        const user = await User.findOne({ where: { email } });
         if (user) return res.status(409).json({ msg: 'User already exists' });
 
         const otp = generateOTP();
         const otpExpire = Date.now() + OTP_EXPIRY_TIME;
 
-        user = new User({ email, password, firstName, middleName, lastName, gender, organizationName, userType, interests, role, otp, otpExpire });
-        await user.save();
+        const newUser = await User.create({
+            email,
+            password,
+            firstName,
+            middleName,
+            lastName,
+            gender,
+            organizationName,
+            userType,
+            interests,  // store as JSON/array if your model allows
+            role,
+            otp,
+            otpExpire,
+          });
 
         // Send OTP email and check if it was successful
-        const otpResponse = await sendOTPEmail(user);
-
+        const otpResponse = await sendOTPEmail(newUser);
         if (!otpResponse.success) {
             return res.status(500).json({ msg: otpResponse.error });
         }
@@ -40,7 +51,7 @@ exports.resendOTP = async (req, res) => {
 
     try {
         // Find the user by email
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ where: { email } });
         if (!user) return res.status(404).json({ msg: 'User not found' });
 
         // Check if the user is already verified
@@ -72,7 +83,7 @@ exports.resendOTP = async (req, res) => {
 exports.verifyOTP = async (req, res) => {
     const { email, otp } = req.body;
     try {
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ where: { email } });
         if (!user) return res.status(404).json({ msg: 'User not found' });
 
         if (user.isVerified) {
@@ -86,7 +97,6 @@ exports.verifyOTP = async (req, res) => {
         user.otp = undefined;
         user.otpExpire = undefined;
         user.isVerified = true;
-
         await user.save();
 
         // ✅ Send a welcome email after successful verification
@@ -104,7 +114,7 @@ exports.verifyOTP = async (req, res) => {
 exports.login = async (req, res) => {
     const { email, password } = req.body;
     try {
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ where: { email } });
         if (!user) return res.status(401).json({ msg: 'Invalid credentials' });
 
         if (!user.isVerified) {
@@ -114,12 +124,12 @@ exports.login = async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(401).json({ msg: 'Invalid credentials' });
 
-        const payload = { userId: user._id, role: user.role };
+        const payload = { userId: user.id, role: user.role };
         const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
 
         res.json({ token, 
             user: {
-                userId: user._id, 
+                userId: user.id, 
                 firstName: user.firstName, 
                 lastName: user.lastName, 
                 email: user.email, 

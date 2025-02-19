@@ -12,13 +12,12 @@ const adminRoutes = require('./routes/adminRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const morgan = require('morgan');
 const cors = require('cors');
+const { sequelize } = require('./models');
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
-
-// Middleware
 
 // CORS Middleware
 app.use(
@@ -67,18 +66,29 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Connect to MongoDB
-// mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log('MongoDB Connected...'))
-  .catch((err) => console.error('MongoDB Connection Error;', err.message));
+// // Connect to MongoDB
+// // mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+// mongoose
+//   .connect(process.env.MONGO_URI)
+//   .then(() => console.log('MongoDB Connected...'))
+//   .catch((err) => console.error('MongoDB Connection Error;', err.message));
 
-// Local vs Serverless
 if (process.env.NODE_ENV === 'development') {
-  const PORT = process.env.PORT || 5600;
-  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+  (async () => {
+    try {
+      await sequelize.authenticate();
+      console.log('Sequelize DB connection established.');
+
+      await sequelize.sync();
+      console.log('All models synchronized.');
+
+      const PORT = process.env.PORT || 5600;
+      app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    } catch (err) {
+      console.error('Sequelize error:', err);
+      process.exit(1);
+    }
+  })();
 } else {
-  // COMMENT THIS OUT IF NOT USING VERCEL
-  module.exports = app; // Export the app for serverless environments like Vercel
+  module.exports = app;
 }

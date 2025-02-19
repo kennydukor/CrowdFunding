@@ -1,4 +1,4 @@
-const Campaign = require('../models/campaignModel');
+const Campaign = require('../models/Campaign');
 
 exports.shareCampaign = async (req, res) => {
     // Logic to share a campaign

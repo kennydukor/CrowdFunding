@@ -1,6 +1,6 @@
 const axios = require('axios');
-const Bill = require('../models/privateCampaignModel');
-const Contribution = require('../models/contributionModel');
+const Bill = require('../models/PrivateCampaign');
+const Contribution = require('../models/Contribution');
 const { sendEmailNotification } = require('./notificationController'); // Import the notification controller
 
 exports.verifyPaystackPayment = async (req, res) => {

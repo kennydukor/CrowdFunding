@@ -1,6 +1,6 @@
 const axios = require('axios');
 const sgMail = require('@sendgrid/mail');
-const User = require('../models/userModel');
+const User = require('../models/User');
 
 const OTP_REQUEST_LIMIT = 3;  // Max OTP requests within time window
 const OTP_TIME_WINDOW = 10 * 60 * 1000;  // 10 minutes in milliseconds

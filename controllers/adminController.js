@@ -1,5 +1,5 @@
-const Campaign = require('../models/campaignModel');
-const User = require('../models/userModel');
+const Campaign = require('../models/Campaign');
+const User = require('../models/User');
 
 exports.getAllCampaigns = async (req, res) => {
     try {

@@ -1,4 +1,4 @@
-const PrivateCampaign = require('../models/privateCampaignModel');
+const PrivateCampaign = require('../models/PrivateCampaign');
 const axios = require('axios');
 const { sendEmailNotification } = require('./notificationController'); // Import the notification controller
 

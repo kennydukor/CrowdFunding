@@ -1,4 +1,4 @@
-const User = require('../models/userModel');
+const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const { generateOTP, verifyOTP } = require('../utils/otpUtility'); // Import the OTP utility
 const { sendOTPEmail } = require('./notificationController'); // Import the notification controller
@@ -8,7 +8,10 @@ const OTP_EXPIRY_TIME = process.env.OTP_EXPIRY_TIME || 300000; // Default to 5 m
 
 exports.getProfile = async (req, res) => {
     try {
-        const user = await User.findById(req.userId).select('-password -otp -otpExpire -resetPasswordToken -resetPasswordExpire'); // Exclude sensitive fields
+        const user = await User.findByPk(req.userId, {
+            // Exclude sensitive fields in attributes or by removing them before send
+            attributes: { exclude: ['password', 'otp', 'otpExpire', 'resetPasswordToken', 'resetPasswordExpire'] },
+          });
         if (!user) return res.status(404).json({ msg: 'User not found' });
 
         res.status(200).json(user);
@@ -21,7 +24,7 @@ exports.getProfile = async (req, res) => {
 exports.updateProfile = async (req, res) => {
     const { firstName, middleName, lastName, bio, interests } = req.body;
     try {
-        let user = await User.findById(req.userId);
+        let user = await User.findByPk(req.userId);
         if (!user) return res.status(404).json({ msg: 'User not found' });
 
         // Handle Profile Picture Upload (Square Cropped)
@@ -47,8 +50,12 @@ exports.updateProfile = async (req, res) => {
         await user.save();
 
         // Remove sensitive fields before returning the response
-        const userResponse = user.toObject();
+        const userResponse = user.toJSON();
         delete userResponse.password;
+        delete userResponse.otp;
+        delete userResponse.otpExpire;
+        delete userResponse.resetPasswordToken;
+        delete userResponse.resetPasswordExpire;
 
         res.status(200).json(userResponse);
     } catch (err) {
@@ -60,7 +67,7 @@ exports.updateProfile = async (req, res) => {
 exports.changePassword = async (req, res) => {
     const { oldPassword, newPassword } = req.body;
     try {
-        const user = await User.findById(req.userId);
+        const user = await User.findByPk(req.userId);
         if (!user) return res.status(404).json({ msg: 'User not found' });
 
         const isMatch = await bcrypt.compare(oldPassword, user.password);
@@ -83,7 +90,7 @@ exports.changePassword = async (req, res) => {
 exports.forgotPassword = async (req, res) => {
     const { email } = req.body;
     try {
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ where: { email } });
         if (!user) return res.status(404).json({ msg: 'User not found' });
 
         const otp = generateOTP();
@@ -110,7 +117,7 @@ exports.forgotPassword = async (req, res) => {
 exports.resetPassword = async (req, res) => {
     const { email, otp, newPassword } = req.body;
     try {
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ where: { email } });
         if (!user) return res.status(404).json({ msg: 'User not found' });
 
         if (!verifyOTP(user, otp)) {
