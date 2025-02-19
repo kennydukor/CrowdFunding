@@ -24,7 +24,7 @@ app.use(
   cors({
     origin: '*', // Replace '*' with the specific frontend URL in production for better security
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], // Allowed methods
-    allowedHeaders: ['Content-Type', 'Authorization'], // Allowed headers
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Body-Signature'], // Allowed headers
   }),
 );
 
