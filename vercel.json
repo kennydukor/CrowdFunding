@@ -5,6 +5,5 @@
       "src": "/(.*)",
       "dest": "server.js"
     }
-  ],
-  "outputDirectory": "."
+  ]
 }
