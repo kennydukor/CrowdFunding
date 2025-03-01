@@ -1,9 +1,8 @@
 const express = require('express');
-const { startCampaign, setGoal, addMedia, setStory, completeFundraiser, getCampaigns, getCampaignById, updateCampaign, uploadImages, getCampaignEnums } = require('../controllers/campaignController');
+const { startCampaign, setGoal, uploadVideo, setStory, completeFundraiser, getCampaigns, getCampaignById, updateCampaign, uploadImages } = require('../controllers/campaignController');
 const authMiddleware = require('../middlewares/authMiddleware');
 const { check, validationResult } = require('express-validator');
-const { uploadMedia } = require('../middlewares/uploadMiddleware');
-const CampaignEnums = require('../utils/campaignEnums');
+const { uploadMedia, uploadVideo: uploadVideoMiddlware } = require('../middlewares/uploadMiddleware');
 
 const router = express.Router();
 
@@ -13,7 +12,7 @@ router.put('/:campaignId/goal', [authMiddleware,
     check('deadline', 'Deadline is required').isISO8601(),
     // check('currency', 'Invalid currency').isIn(CampaignEnums.africanCurrencies)
 ], setGoal);
-router.put('/:campaignId/media/video', authMiddleware, addMedia);
+router.put('/:campaignId/media/video', authMiddleware, uploadVideoMiddlware, uploadVideo);
 router.put('/:campaignId/story', authMiddleware, setStory);
 router.put('/:campaignId/complete', authMiddleware, completeFundraiser);
 router.put('/:campaignId', authMiddleware, updateCampaign);

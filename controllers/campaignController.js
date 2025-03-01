@@ -92,26 +92,31 @@ exports.setGoal = async (req, res) => {
 };
   
 
-exports.addMedia = async (req, res) => {
-    const { coverPhoto, videoUrl } = req.body;
-    try {
+exports.uploadVideo = async (req, res) => {
+  try {
       const campaign = await Campaign.findByPk(req.params.campaignId);
       if (!campaign) return res.status(404).json({ msg: 'Campaign not found' });
-  
+
       if (campaign.owner !== req.userId) {
-        return res.status(401).json({ msg: 'User not authorized' });
+          return res.status(401).json({ msg: 'User not authorized' });
       }
-  
-      campaign.coverPhoto = coverPhoto;
-      campaign.videoUrl = videoUrl;
+
+      if (!req.file) {
+          return res.status(400).json({ msg: 'No video file uploaded' });
+      }
+
+      // Get video URL from Multer upload
+      campaign.videoUrl = req.file.path; // Cloudinary already provides the URL
+
       await campaign.save();
-  
-      res.status(200).json(campaign);
-    } catch (err) {
+
+      res.status(200).json({ msg: 'Video uploaded successfully', videoUrl: campaign.videoUrl });
+  } catch (err) {
       console.error(err);
       res.status(500).send('Server error: ' + err.message);
-    }
+  }
 };
+
 
 exports.setStory = async (req, res) => {
     const { story } = req.body;
@@ -177,7 +182,7 @@ exports.getCampaignById = async (req, res) => {
 
 exports.updateCampaign = async (req, res) => {
     // const { title, description, goalAmount, deadline, category, location, country, beneficiary, story, coverPhoto, videoUrl } = req.body;
-    const { title, description, deadline, category, story } = req.body;
+    const { title, description, deadline, category, story, coverPhoto} = req.body;
     try {
       let campaign = await Campaign.findByPk(req.params.campaignId);
       if (!campaign) return res.status(404).json({ msg: 'Campaign not found' });
@@ -192,7 +197,7 @@ exports.updateCampaign = async (req, res) => {
       // if (goalAmount) campaign.goalAmount = goalAmount;
       if (deadline) campaign.deadline = deadline;
       if (story) campaign.story = story;
-      // if (coverPhoto) campaign.coverPhoto = coverPhoto;
+      if (coverPhoto) campaign.coverPhoto = coverPhoto;
       // if (videoUrl) campaign.videoUrl = videoUrl;
   
       //   // Validate and update country (location is now an address, country is an ID)

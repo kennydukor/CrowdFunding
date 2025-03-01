@@ -23,6 +23,16 @@ const getStorage = (folderName) => {
     });
 };
 
+// Configure storage for video uploads
+const videoStorage = new CloudinaryStorage({
+    cloudinary,
+    params: {
+        folder: 'video_uploads',
+        resource_type: 'video', // Important for videos
+        allowed_formats: ['mp4', 'mov', 'avi'],
+    },
+});
+
 // Middleware for profile pictures
 const uploadProfilePicture = multer({ storage: getStorage('profile_pictures') });
 
@@ -31,6 +41,8 @@ const uploadMedia = multer({
     storage: multer.memoryStorage(), 
     limits: { fileSize: 1 * 1024 * 1024 } // Limit files to 1MB each
   });
-// const uploadMedia = multer({ storage: getStorage('media_uploads') });
 
-module.exports = { uploadProfilePicture, uploadMedia };
+// Middleware for uploading videos (single file)
+const uploadVideo = multer({ storage: videoStorage }).single('videoFile');
+
+module.exports = { uploadProfilePicture, uploadMedia, uploadVideo };
