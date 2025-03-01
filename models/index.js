@@ -65,4 +65,7 @@ module.exports = {
   Flag,
   PrivateCampaign,
   PrivateCampaignShare, // Don't forget to export the new model
+  Category,
+  Beneficiary,
+  Country
 };

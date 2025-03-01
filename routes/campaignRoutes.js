@@ -21,7 +21,6 @@ router.put('/:campaignId', authMiddleware, updateCampaign);
 // New route for uploading extra media files (multiple images)
 router.put('/:campaignId/media/images', authMiddleware, uploadMedia.array('mediaFiles', 5), uploadImages);
 
-router.get('/enums', getCampaignEnums);
 router.get('/:campaignId', getCampaignById);
 router.get('/', getCampaigns);
 

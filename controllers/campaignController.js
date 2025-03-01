@@ -1,51 +1,60 @@
-const Campaign = require('../models/Campaign');
 const cloudinary = require('../utils/cloudinary');
-const User = require('../models/User');
-const CampaignEnums = require('../utils/campaignEnums');
+const { Campaign, Country, Category, Beneficiary, User } = require('../models');
 
 exports.startCampaign = async (req, res) => {
-    const { title, description, location, category, beneficiary } = req.body;
-    try {
+  const { title, description, location, country, category, beneficiary } = req.body;
+
+  try {
       // 1) Fetch user (Sequelize)
       const user = await User.findByPk(req.userId);
       if (!user) {
-        return res.status(404).json({ msg: 'User not found' });
+          return res.status(404).json({ msg: 'User not found' });
       }
-  
+
       if (!user.isVerified || user.KYCStatus === 'pending') {
-        return res.status(400).json({ msg: 'You cannot start a campaign. Verify your account and complete KYC.' });
+          return res.status(400).json({ msg: 'You cannot start a campaign. Verify your account and complete KYC.' });
       }
-  
-      // 2) Validate location & category using your enum logic
-      const locationId = parseInt(location, 10);
+
+      // 2) Validate location, category, and beneficiary using the database
+      const countryId = parseInt(country, 10);
       const categoryId = parseInt(category, 10);
-  
-      const validLocation = CampaignEnums.africanCurrencies.find(item => item.id === locationId);
-      if (!validLocation) {
-        return res.status(400).json({ msg: 'Invalid location id' });
+      const beneficiaryId = parseInt(beneficiary, 10);
+
+      // Check if location exists in the Country table
+      const validCountry = await Country.findByPk(countryId);
+      if (!validCountry) {
+          return res.status(400).json({ msg: 'Invalid country id' });
       }
-  
-      const validCategory = CampaignEnums.categories.find(item => item.id === categoryId);
+
+      // Check if category exists in the Category table
+      const validCategory = await Category.findByPk(categoryId);
       if (!validCategory) {
-        return res.status(400).json({ msg: 'Invalid category id' });
+          return res.status(400).json({ msg: 'Invalid category id' });
       }
-  
+
+      // Check if beneficiary exists in the Beneficiary table
+      const validBeneficiary = await Beneficiary.findByPk(beneficiaryId);
+      if (!validBeneficiary) {
+          return res.status(400).json({ msg: 'Invalid beneficiary id' });
+      }
+
       // 3) Create campaign record
       const campaign = await Campaign.create({
-        title,
-        description,
-        location: locationId,  // numeric ID
-        category: categoryId,  // numeric ID
-        beneficiary,
-        owner: req.userId,     // foreign key to User
+          title,
+          description,
+          location,
+          countryId,
+          categoryId,
+          beneficiaryId,
+          owner: req.userId,
       });
-  
+
       res.status(201).json(campaign);
-    } catch (err) {
+  } catch (err) {
       console.error(err);
       res.status(500).send('Server error: ' + err.message);
-    }
-  };
+  }
+};
   
 
 exports.setGoal = async (req, res) => {
@@ -60,12 +69,17 @@ exports.setGoal = async (req, res) => {
         return res.status(401).json({ msg: 'User not authorized' });
       }
   
-      // If location is an ID, find currency from enums
-      const countryId = Number(campaign.location);
-      const countryCurrency = CampaignEnums.africanCurrencies.find(item => item.id === countryId);
+      // If campaign has a countryId, get the currency from the database
+      let finalCurrency = currency;
+      if (campaign.countryId) {
+          const country = await Country.findByPk(campaign.countryId);
+          if (country && country.currency) {
+              finalCurrency = country.currency;
+          }
+      }
   
       // Update campaign fields
-      campaign.currency = countryCurrency ? countryCurrency.currency : currency; 
+      campaign.currency = finalCurrency; 
       campaign.goalAmount = goalAmount;
       campaign.deadline = deadline;
   
@@ -162,7 +176,8 @@ exports.getCampaignById = async (req, res) => {
 };  
 
 exports.updateCampaign = async (req, res) => {
-    const { title, description, goalAmount, deadline, category, location, beneficiary, story, coverPhoto, videoUrl } = req.body;
+    // const { title, description, goalAmount, deadline, category, location, country, beneficiary, story, coverPhoto, videoUrl } = req.body;
+    const { title, description, deadline, category, story } = req.body;
     try {
       let campaign = await Campaign.findByPk(req.params.campaignId);
       if (!campaign) return res.status(404).json({ msg: 'Campaign not found' });
@@ -174,41 +189,46 @@ exports.updateCampaign = async (req, res) => {
       // Update fields if provided
       if (title) campaign.title = title;
       if (description) campaign.description = description;
-      if (goalAmount) campaign.goalAmount = goalAmount;
+      // if (goalAmount) campaign.goalAmount = goalAmount;
       if (deadline) campaign.deadline = deadline;
       if (story) campaign.story = story;
-      if (coverPhoto) campaign.coverPhoto = coverPhoto;
-      if (videoUrl) campaign.videoUrl = videoUrl;
+      // if (coverPhoto) campaign.coverPhoto = coverPhoto;
+      // if (videoUrl) campaign.videoUrl = videoUrl;
   
+      //   // Validate and update country (location is now an address, country is an ID)
+      //   if (country) {
+      //     const countryId = parseInt(country, 10);
+      //     const validCountry = await Country.findByPk(countryId);
+      //     if (!validCountry) {
+      //         return res.status(400).json({ msg: 'Invalid country id' });
+      //     }
+      //     campaign.countryId = countryId;
+      // }
+
+      // // Update location (plain text address)
+      // if (location) {
+      //     campaign.location = location; // Location is now a simple text field
+      // }
+
       // Validate and update category
       if (category) {
-        const catId = parseInt(category, 10);
-        const validCategory = CampaignEnums.categories.find(item => item.id === catId);
-        if (!validCategory) {
-          return res.status(400).json({ msg: 'Invalid category id' });
-        }
-        campaign.category = catId;
+          const categoryId = parseInt(category, 10);
+          const validCategory = await Category.findByPk(categoryId);
+          if (!validCategory) {
+              return res.status(400).json({ msg: 'Invalid category id' });
+          }
+          campaign.categoryId = categoryId;
       }
-  
-      // Validate and update location
-      if (location) {
-        const locId = parseInt(location, 10);
-        const validLocation = CampaignEnums.africanCurrencies.find(item => item.id === locId);
-        if (!validLocation) {
-          return res.status(400).json({ msg: 'Invalid location id' });
-        }
-        campaign.location = locId;
-      }
-  
-      // Validate and update beneficiary
-      if (beneficiary) {
-        const benId = parseInt(beneficiary, 10);
-        const validBeneficiary = CampaignEnums.beneficiaries.find(item => item.id === benId);
-        if (!validBeneficiary) {
-          return res.status(400).json({ msg: 'Invalid beneficiary id' });
-        }
-        campaign.beneficiary = benId;
-      }
+
+      // // Validate and update beneficiary
+      // if (beneficiary) {
+      //     const beneficiaryId = parseInt(beneficiary, 10);
+      //     const validBeneficiary = await Beneficiary.findByPk(beneficiaryId);
+      //     if (!validBeneficiary) {
+      //         return res.status(400).json({ msg: 'Invalid beneficiary id' });
+      //     }
+      //     campaign.beneficiaryId = beneficiaryId;
+      // }
   
       await campaign.save();
       res.json(campaign);

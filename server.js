@@ -10,6 +10,7 @@ const socialRoutes = require('./routes/socialRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
+const enumsRoutes = require('./routes/campaignEnumRoutes');
 const morgan = require('morgan');
 const cors = require('cors');
 const { sequelize } = require('./models');
@@ -48,6 +49,7 @@ app.use('/api/social', socialRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/enums', enumsRoutes);
 
 app.all('*', (req, res, next) => {
   return next(new Error('Route not found'));

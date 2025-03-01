@@ -1,5 +1,8 @@
 // models/Campaign.js
 const { DataTypes } = require('sequelize');
+const Country = require('./Countries');
+const Category = require('./CampaignCategory');
+const Beneficiary = require('./CampaignBeneficiary');
 const sequelize = require('../utils/db');
 
 const Campaign = sequelize.define('Campaign', {
@@ -10,6 +13,10 @@ const Campaign = sequelize.define('Campaign', {
   description: {
     type: DataTypes.TEXT,
     allowNull: false,
+  },
+  location: {
+    type: DataTypes.STRING, // Allows storing address, city, or region
+    allowNull: true, // Can be optional
   },
   goalAmount: {
     type: DataTypes.DECIMAL,
@@ -43,6 +50,30 @@ const Campaign = sequelize.define('Campaign', {
   status: {
     type: DataTypes.ENUM('pending', 'approved', 'rejected'),
     defaultValue: 'pending',
+  },
+  countryId: {
+    type: DataTypes.INTEGER,
+    references: {
+      model: Country,
+      key: 'id',
+    },
+    allowNull: false,
+  },
+  categoryId: {
+    type: DataTypes.INTEGER,
+    references: {
+      model: Category,
+      key: 'id',
+    },
+    allowNull: false,
+  },
+  beneficiaryId: {
+    type: DataTypes.INTEGER,
+    references: {
+      model: Beneficiary,
+      key: 'id',
+    },
+    allowNull: false,
   },
   // If you need an "isComplete" field:
   isComplete: {
