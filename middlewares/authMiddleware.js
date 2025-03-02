@@ -12,11 +12,11 @@ const authMiddleware = (req, res, next) => {
         return res.status(401).json({ msg: 'No token, authorization denied' });
     }
     
-    // // Expect the HMAC of the request body in a custom header
-    // const bodySignature = req.header('X-Body-Signature');
-    // if (!bodySignature) {
-    //     return res.status(401).json({ msg: 'No body signature provided' });
-    // }
+    // Expect the HMAC of the request body in a custom header
+    const bodySignature = req.header('X-Body-Signature');
+    if (!bodySignature) {
+        return res.status(401).json({ msg: 'No body signature provided' });
+    }
     
     try {
         // Verify the JWT using the secret
@@ -27,10 +27,10 @@ const authMiddleware = (req, res, next) => {
             .update(JSON.stringify(req.body))
             .digest('hex');
             
-        // // Compare the computed signature to the one provided by the client
-        // if (computedSignature !== bodySignature) {
-        //     return res.status(401).json({ msg: 'Request body integrity check failed' });
-        // }
+        // Compare the computed signature to the one provided by the client
+        if (computedSignature !== bodySignature) {
+            return res.status(401).json({ msg: 'Request body integrity check failed' });
+        }
         
         // Attach the userId from the token to the request object
         req.userId = decoded.userId;
