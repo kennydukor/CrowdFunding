@@ -49,7 +49,19 @@ exports.startCampaign = async (req, res) => {
           owner: req.userId,
       });
 
-      res.status(201).json(campaign);
+      const campaignWithDetails = {
+        ...campaign.toJSON(),
+        country: validCountry.dataValues.country,
+        category: validCategory.dataValues.name,
+        beneficiary: validBeneficiary.dataValues.name,
+      };
+
+      // Remove the countryId, categoryId, and beneficiaryId from the response
+      delete campaignWithDetails.countryId;
+      delete campaignWithDetails.categoryId;
+      delete campaignWithDetails.beneficiaryId;
+
+      res.status(201).json(campaignWithDetails);
   } catch (err) {
       console.error(err);
       res.status(500).send('Server error: ' + err.message);
@@ -158,27 +170,72 @@ exports.completeFundraiser = async (req, res) => {
   };  
 
 
-exports.getCampaigns = async (req, res) => {
+  exports.getCampaigns = async (req, res) => {
     try {
-      const campaigns = await Campaign.findAll(); // Sequelize method
-      res.json(campaigns);
+      const campaigns = await Campaign.findAll({
+        include: [
+          { 
+            model: Country, 
+            attributes: ['id', 'country', 'currency'], // Include both 'id' and 'name' fields for Country
+          },
+          { 
+            model: Category, 
+            attributes: ['id', 'name'], // Include both 'id' and 'name' fields for Category
+          },
+          { 
+            model: Beneficiary, 
+            attributes: ['id', 'name'], // Include both 'id' and 'name' fields for Beneficiary
+          }
+        ],
+      });
+  
+      // Format the result, ensuring that we handle null values for relationships
+      const campaignsWithDetails = campaigns.map(campaign => {
+        const campaignJson = campaign.toJSON();
+  
+        return {
+          ...campaignJson
+        };
+      });
+  
+      res.json(campaignsWithDetails);
     } catch (err) {
       console.error(err);
       res.status(500).send('Server error');
     }
-};
+  };
   
-
-exports.getCampaignById = async (req, res) => {
+  exports.getCampaignById = async (req, res) => {
     try {
-      const campaign = await Campaign.findByPk(req.params.campaignId);
+      const campaign = await Campaign.findByPk(req.params.campaignId, {
+        include: [
+          { 
+            model: Country, 
+            attributes: ['id', 'country', 'currency'], // Include both 'id' and 'name' fields for Country
+          },
+          { 
+            model: Category, 
+            attributes: ['id', 'name'], // Include both 'id' and 'name' fields for Category
+          },
+          { 
+            model: Beneficiary, 
+            attributes: ['id', 'name'], // Include both 'id' and 'name' fields for Beneficiary
+          }
+        ],
+      });
+  
       if (!campaign) return res.status(404).json({ msg: 'Campaign not found' });
-      res.json(campaign);
+  
+      // Format the result, ensuring that we handle null values for relationships
+      const campaignJson = campaign.toJSON();
+      res.json({
+        ...campaignJson
+      });
     } catch (err) {
       console.error(err);
       res.status(500).send('Server error: ' + err.message);
     }
-};  
+  };
 
 exports.updateCampaign = async (req, res) => {
     // const { title, description, goalAmount, deadline, category, location, country, beneficiary, story, coverPhoto, videoUrl } = req.body;
