@@ -12,7 +12,8 @@ router.put('/:campaignId/goal', [authMiddleware,
     check('deadline', 'Deadline is required').isISO8601(),
     // check('currency', 'Invalid currency').isIn(CampaignEnums.africanCurrencies)
 ], setGoal);
-router.put('/:campaignId/media/video', authMiddleware, uploadVideoMiddlware, uploadVideo);
+// router.put('/:campaignId/media/video', authMiddleware, uploadVideoMiddlware, uploadVideo);
+router.put('/:campaignId/media/video', authMiddleware, uploadVideo);
 router.put('/:campaignId/story', authMiddleware, setStory);
 router.put('/:campaignId/complete', authMiddleware, completeFundraiser);
 router.put('/:campaignId', authMiddleware, updateCampaign);

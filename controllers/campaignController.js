@@ -104,30 +104,58 @@ exports.setGoal = async (req, res) => {
 };
   
 
+// exports.uploadVideo = async (req, res) => {
+//   try {
+//       const campaign = await Campaign.findByPk(req.params.campaignId);
+//       if (!campaign) return res.status(404).json({ msg: 'Campaign not found' });
+
+//       if (campaign.owner !== req.userId) {
+//           return res.status(401).json({ msg: 'User not authorized' });
+//       }
+
+//       if (!req.file) {
+//           return res.status(400).json({ msg: 'No video file uploaded' });
+//       }
+
+//       // Get video URL from Multer upload
+//       campaign.videoUrl = req.file.path; // Cloudinary already provides the URL
+
+//       await campaign.save();
+
+//       res.status(200).json({ msg: 'Video uploaded successfully', videoUrl: campaign.videoUrl });
+//   } catch (err) {
+//       console.error(err);
+//       res.status(500).send('Server error: ' + err.message);
+//   }
+// };
+
 exports.uploadVideo = async (req, res) => {
+  const { videoUrl } = req.body;
+
   try {
-      const campaign = await Campaign.findByPk(req.params.campaignId);
-      if (!campaign) return res.status(404).json({ msg: 'Campaign not found' });
+    const campaign = await Campaign.findByPk(req.params.campaignId);
+    if (!campaign) return res.status(404).json({ msg: 'Campaign not found' });
 
-      if (campaign.owner !== req.userId) {
-          return res.status(401).json({ msg: 'User not authorized' });
-      }
+    if (campaign.owner !== req.userId) {
+      return res.status(401).json({ msg: 'User not authorized' });
+    }
 
-      if (!req.file) {
-          return res.status(400).json({ msg: 'No video file uploaded' });
-      }
+    // Validate video URL format (optional but recommended)
+    const isValidUrl = typeof videoUrl === 'string' && videoUrl.match(/^(https:\/\/)?(www\.)?(youtube\.com|youtu\.be|vimeo\.com|.+\.m3u8)/i);
+    if (!isValidUrl) {
+      return res.status(400).json({ msg: 'Invalid video URL. Only YouTube, Vimeo, or HLS URLs are accepted.' });
+    }
 
-      // Get video URL from Multer upload
-      campaign.videoUrl = req.file.path; // Cloudinary already provides the URL
+    campaign.videoUrl = videoUrl;
+    await campaign.save();
 
-      await campaign.save();
-
-      res.status(200).json({ msg: 'Video uploaded successfully', videoUrl: campaign.videoUrl });
+    res.status(200).json({ msg: 'Video URL added successfully', videoUrl });
   } catch (err) {
-      console.error(err);
-      res.status(500).send('Server error: ' + err.message);
+    console.error(err);
+    res.status(500).send('Server error: ' + err.message);
   }
 };
+
 
 
 exports.setStory = async (req, res) => {
@@ -170,33 +198,66 @@ exports.completeFundraiser = async (req, res) => {
   };  
 
 
+  // exports.getCampaigns = async (req, res) => {
+  //   try {
+  //     const campaigns = await Campaign.findAll({
+  //       include: [
+  //         { 
+  //           model: Country, 
+  //           attributes: ['id', 'country', 'currency'], // Include both 'id' and 'name' fields for Country
+  //         },
+  //         { 
+  //           model: Category, 
+  //           attributes: ['id', 'name'], // Include both 'id' and 'name' fields for Category
+  //         },
+  //         { 
+  //           model: Beneficiary, 
+  //           attributes: ['id', 'name'], // Include both 'id' and 'name' fields for Beneficiary
+  //         }
+  //       ],
+  //     });
+  
+  //     // Format the result, ensuring that we handle null values for relationships
+  //     const campaignsWithDetails = campaigns.map(campaign => {
+  //       const campaignJson = campaign.toJSON();
+  
+  //       return {
+  //         ...campaignJson
+  //       };
+  //     });
+  
+  //     res.json(campaignsWithDetails);
+  //   } catch (err) {
+  //     console.error(err);
+  //     res.status(500).send('Server error');
+  //   }
+  // };
+
+
   exports.getCampaigns = async (req, res) => {
     try {
       const campaigns = await Campaign.findAll({
+        where: {
+          isComplete: true,
+          status: 'approved'
+        },
         include: [
           { 
             model: Country, 
-            attributes: ['id', 'country', 'currency'], // Include both 'id' and 'name' fields for Country
+            attributes: ['id', 'country', 'currency'],
           },
           { 
             model: Category, 
-            attributes: ['id', 'name'], // Include both 'id' and 'name' fields for Category
+            attributes: ['id', 'name'],
           },
           { 
             model: Beneficiary, 
-            attributes: ['id', 'name'], // Include both 'id' and 'name' fields for Beneficiary
+            attributes: ['id', 'name'],
           }
         ],
       });
   
-      // Format the result, ensuring that we handle null values for relationships
-      const campaignsWithDetails = campaigns.map(campaign => {
-        const campaignJson = campaign.toJSON();
-  
-        return {
-          ...campaignJson
-        };
-      });
+      const campaignsWithDetails = campaigns.map(campaign => campaign.toJSON());
   
       res.json(campaignsWithDetails);
     } catch (err) {
@@ -204,6 +265,7 @@ exports.completeFundraiser = async (req, res) => {
       res.status(500).send('Server error');
     }
   };
+  
   
   exports.getCampaignById = async (req, res) => {
     try {
