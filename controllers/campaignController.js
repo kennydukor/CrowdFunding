@@ -1,4 +1,5 @@
 const cloudinary = require('../utils/cloudinary');
+const slugify = require('slugify');
 const { Campaign, Country, Category, Beneficiary, User } = require('../models');
 
 exports.startCampaign = async (req, res) => {
@@ -38,9 +39,19 @@ exports.startCampaign = async (req, res) => {
           return res.status(400).json({ msg: 'Invalid beneficiary id' });
       }
 
+      const slugBase = slugify(title, { lower: true, strict: true }); // e.g., "help-a-child-in-kenya"
+      let slug = slugBase;
+      let suffix = 1;
+
+      // Ensure slug uniqueness
+      while (await Campaign.findOne({ where: { slug } })) {
+        slug = `${slugBase}-${suffix++}`;
+      }
+
       // 3) Create campaign record
       const campaign = await Campaign.create({
           title,
+          slug,
           description,
           location,
           countryId,
@@ -299,6 +310,28 @@ exports.completeFundraiser = async (req, res) => {
       res.status(500).send('Server error: ' + err.message);
     }
   };
+
+  exports.getCampaignBySlug = async (req, res) => {
+    try {
+      const { slug } = req.params;
+  
+      const campaign = await Campaign.findOne({
+        where: { slug },
+        include: [
+          { model: Country, attributes: ['id', 'country', 'currency'] },
+          { model: Category, attributes: ['id', 'name'] },
+          { model: Beneficiary, attributes: ['id', 'name'] },
+        ],
+      });
+  
+      if (!campaign) return res.status(404).json({ msg: 'Campaign not found' });
+  
+      res.json(campaign.toJSON());
+    } catch (err) {
+      console.error('Error fetching campaign by slug:', err);
+      res.status(500).send('Server error: ' + err.message);
+    }
+  };  
 
   exports.getUserCampaigns = async (req, res) => {
     try {
