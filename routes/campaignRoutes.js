@@ -1,5 +1,5 @@
 const express = require('express');
-const { startCampaign, setGoal, uploadVideo, setStory, completeFundraiser, getCampaigns, getCampaignById, updateCampaign, uploadImages } = require('../controllers/campaignController');
+const { startCampaign, setGoal, uploadVideo, setStory, completeFundraiser, getCampaigns, getCampaignById, updateCampaign, uploadImages, getUserCampaigns } = require('../controllers/campaignController');
 const authMiddleware = require('../middlewares/authMiddleware');
 const { check, validationResult } = require('express-validator');
 const { uploadMedia, uploadVideo: uploadVideoMiddlware } = require('../middlewares/uploadMiddleware');
@@ -21,6 +21,7 @@ router.put('/:campaignId', authMiddleware, updateCampaign);
 // New route for uploading extra media files (multiple images)
 router.put('/:campaignId/media/images', authMiddleware, uploadMedia.array('mediaFiles', 5), uploadImages);
 
+router.get('/me', authMiddleware, getUserCampaigns);
 router.get('/:campaignId', getCampaignById);
 router.get('/', getCampaigns);
 

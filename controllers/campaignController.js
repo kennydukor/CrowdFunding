@@ -235,36 +235,37 @@ exports.completeFundraiser = async (req, res) => {
 
 
   exports.getCampaigns = async (req, res) => {
+    const page = parseInt(req.query.page) || 1;       // default to page 1
+    const limit = parseInt(req.query.limit) || 10;    // default to 10 campaigns per page
+    const offset = (page - 1) * limit;
+  
     try {
-      const campaigns = await Campaign.findAll({
+      const { rows: campaigns, count: total } = await Campaign.findAndCountAll({
         where: {
           isComplete: true,
           status: 'approved'
         },
         include: [
-          { 
-            model: Country, 
-            attributes: ['id', 'country', 'currency'],
-          },
-          { 
-            model: Category, 
-            attributes: ['id', 'name'],
-          },
-          { 
-            model: Beneficiary, 
-            attributes: ['id', 'name'],
-          }
+          { model: Country, attributes: ['id', 'country', 'currency'] },
+          { model: Category, attributes: ['id', 'name'] },
+          { model: Beneficiary, attributes: ['id', 'name'] },
         ],
+        order: [['createdAt', 'DESC']],  // newest first
+        limit,
+        offset
       });
   
-      const campaignsWithDetails = campaigns.map(campaign => campaign.toJSON());
-  
-      res.json(campaignsWithDetails);
+      res.json({
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        totalCampaigns: total,
+        campaigns: campaigns.map(c => c.toJSON())
+      });
     } catch (err) {
       console.error(err);
       res.status(500).send('Server error');
     }
-  };
+  };  
   
   
   exports.getCampaignById = async (req, res) => {
@@ -298,6 +299,26 @@ exports.completeFundraiser = async (req, res) => {
       res.status(500).send('Server error: ' + err.message);
     }
   };
+
+  exports.getUserCampaigns = async (req, res) => {
+    try {
+      const campaigns = await Campaign.findAll({
+        where: {
+          owner: req.userId
+        },
+        include: [
+          { model: Country, attributes: ['id', 'country', 'currency'] },
+          { model: Category, attributes: ['id', 'name'] },
+          { model: Beneficiary, attributes: ['id', 'name'] },
+        ]
+      });
+  
+      res.status(200).json(campaigns);
+    } catch (err) {
+      console.error('Error fetching user campaigns:', err);
+      res.status(500).send('Server error');
+    }
+  };  
 
 exports.updateCampaign = async (req, res) => {
     // const { title, description, goalAmount, deadline, category, location, country, beneficiary, story, coverPhoto, videoUrl } = req.body;

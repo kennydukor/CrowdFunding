@@ -75,6 +75,11 @@ const Campaign = sequelize.define('Campaign', {
     },
     allowNull: false,
   },
+  slug: {
+    type: DataTypes.STRING,
+    unique: true,
+    allowNull: false
+  },
   // If you need an "isComplete" field:
   isComplete: {
     type: DataTypes.BOOLEAN,
