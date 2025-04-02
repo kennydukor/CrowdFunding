@@ -168,7 +168,6 @@ exports.uploadVideo = async (req, res) => {
 };
 
 
-
 exports.setStory = async (req, res) => {
     const { story } = req.body;
     try {
@@ -207,43 +206,6 @@ exports.completeFundraiser = async (req, res) => {
       res.status(500).send('Server error: ' + err.message);
     }
   };  
-
-
-  // exports.getCampaigns = async (req, res) => {
-  //   try {
-  //     const campaigns = await Campaign.findAll({
-  //       include: [
-  //         { 
-  //           model: Country, 
-  //           attributes: ['id', 'country', 'currency'], // Include both 'id' and 'name' fields for Country
-  //         },
-  //         { 
-  //           model: Category, 
-  //           attributes: ['id', 'name'], // Include both 'id' and 'name' fields for Category
-  //         },
-  //         { 
-  //           model: Beneficiary, 
-  //           attributes: ['id', 'name'], // Include both 'id' and 'name' fields for Beneficiary
-  //         }
-  //       ],
-  //     });
-  
-  //     // Format the result, ensuring that we handle null values for relationships
-  //     const campaignsWithDetails = campaigns.map(campaign => {
-  //       const campaignJson = campaign.toJSON();
-  
-  //       return {
-  //         ...campaignJson
-  //       };
-  //     });
-  
-  //     res.json(campaignsWithDetails);
-  //   } catch (err) {
-  //     console.error(err);
-  //     res.status(500).send('Server error');
-  //   }
-  // };
-
 
   exports.getCampaigns = async (req, res) => {
     const page = parseInt(req.query.page) || 1;       // default to page 1

@@ -13,6 +13,11 @@ const PaymentProvider = sequelize.define('PaymentProvider', {
         allowNull: false,
         unique: true, // Ensures no duplicate providers
     },
+    key: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true
+      },
     status: {
         type: DataTypes.ENUM('active', 'inactive'),
         defaultValue: 'active',

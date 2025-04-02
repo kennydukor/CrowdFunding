@@ -3,41 +3,57 @@ const sequelize = require('../utils/db');  // Ensure transactions are handled pr
 const axios = require('axios');
 
 const { sendEmailNotification } = require('./notificationController'); // Import the notification controller
+const { generatePaymentLink } = require('../services/paymentService');
 
 exports.initiatePayment = async (req, res) => {
     const { campaignId, amount, paymentMethod, paymentProviderId } = req.body;
-
+  
     try {
-        // Validate campaign, user, and payment provider
-        const campaign = await Campaign.findByPk(campaignId);
-        if (!campaign) return res.status(404).json({ msg: 'Campaign not found' });
-
-        const user = await User.findByPk(req.userId);
-        if (!user) return res.status(404).json({ msg: 'User not found' });
-
-        const paymentProvider = await PaymentProvider.findByPk(paymentProviderId);
-        if (!paymentProvider) return res.status(400).json({ msg: 'Invalid payment provider' });
-
-        // Call provider API to generate payment link
-        // const paymentLink = await generatePaymentLink(amount, user.email, campaign.title, campaignId);
-
-        // Create a funding log entry
-        const transaction = await FundingLog.create({
-            campaignId,
-            userId: req.userId,
-            paymentProviderId,
-            amount,
-            paymentMethod,
-            systemTransactionId: `sys_${Date.now()}`, // Our internal transaction ID
-        });
-
-        res.status(201).json({ msg: 'Payment initiated', transaction });
-
+      const campaign = await Campaign.findByPk(campaignId);
+      if (!campaign) return res.status(404).json({ msg: 'Campaign not found' });
+  
+      const user = await User.findByPk(req.userId);
+      if (!user) return res.status(404).json({ msg: 'User not found' });
+  
+      const paymentProvider = await PaymentProvider.findByPk(paymentProviderId);
+      if (!paymentProvider) return res.status(400).json({ msg: 'Invalid payment provider' });
+  
+      const systemTransactionId = `sys_${Date.now()}`;
+  
+      // Generate the payment link using the appropriate service
+      const paymentLink = await generatePaymentLink({
+        providerKey: paymentProvider.key, // Example: 'paystack'
+        amount,
+        user,
+        campaign,
+        transactionId: systemTransactionId,
+      });
+  
+      const transaction = await FundingLog.create({
+        campaignId,
+        userId: req.userId,
+        paymentProviderId,
+        amount,
+        currency: campaign.currency || 'NGN', // fallback
+        paymentMethod,
+        systemTransactionId,
+        status: 'pending',
+        metadata: {
+          userEmail: user.email,
+          userPhone: user.phone,
+          campaignTitle: campaign.title,
+          paymentLink: paymentLink,
+          // ...anything else you'd like to log
+        },
+      });
+  
+      res.status(201).json({ msg: 'Payment initiated', paymentLink, transaction });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ msg: 'Server error', error: err.message });
+      console.error(err);
+      res.status(500).json({ msg: 'Server error', error: err.message });
     }
-};
+  };
+  
 
 exports.handlePaymentCallback = async (req, res) => {
     try {
@@ -56,7 +72,7 @@ exports.handlePaymentCallback = async (req, res) => {
         let systemTransactionId, providerTransactionId, receivedAmount, status;
 
         // 2️⃣ Parse webhook response based on provider
-        switch (paymentProvider.name.toLowerCase()) {
+        switch (paymentProvider.key.toLowerCase()) {
             case 'stripe':
                 systemTransactionId = req.body.metadata.systemTransactionId;
                 providerTransactionId = req.body.id;
@@ -100,22 +116,32 @@ exports.handlePaymentCallback = async (req, res) => {
             return res.status(400).json({ msg: 'Transaction already processed' });
         }
 
-        // 4️⃣ Verify received amount matches the expected amount
-        if (receivedAmount !== fundingLog.amount) {
-            return res.status(400).json({
-                msg: 'Payment amount mismatch',
-                expectedAmount: fundingLog.amount,
-                receivedAmount
-            });
-        }
+        // // 4️⃣ Verify received amount matches the expected amount
+        // if (receivedAmount !== fundingLog.amount) {
+        //     return res.status(400).json({
+        //         msg: 'Payment amount mismatch',
+        //         expectedAmount: fundingLog.amount,
+        //         receivedAmount
+        //     });
+        // }
 
         // 5️⃣ Update FundingLog with providerTransactionId & status
         fundingLog.providerTransactionId = providerTransactionId;
         fundingLog.status = status;
+        fundingLog.receivedAmount = receivedAmount;
+        fundingLog.amountMismatch = receivedAmount !== parseFloat(fundingLog.amount);
         await fundingLog.save();
 
         // 6️⃣ If payment is successful, create a contribution
         if (status === 'successful') {
+            if (fundingLog.amountMismatch) {
+                // Optional: skip contribution or notify admins
+                return res.status(200).json({
+                  msg: 'Payment received but amount mismatch detected. Manual review required.',
+                  fundingLog
+                });
+              }
+              
             const contribution = await Contribution.create({
                 campaignId: fundingLog.campaignId,
                 contributorId: fundingLog.userId,
@@ -142,7 +168,7 @@ exports.handlePaymentCallback = async (req, res) => {
 
 exports.getContributionsByCampaign = async (req, res) => {
     try {
-        const contributions = await Contribution.find({ campaign: req.params.campaignId });
+        const contributions = await Contribution.findAll({ where: { campaignId: req.params.campaignId } });
         res.json(contributions);
     } catch (err) {
         console.error(err);
@@ -152,7 +178,7 @@ exports.getContributionsByCampaign = async (req, res) => {
 
 exports.getContributionsByUser = async (req, res) => {
     try {
-        const contributions = await Contribution.find({ contributor: req.userId });
+        const contributions = await Contribution.find({ where: { contributor: req.userId } });
         res.json(contributions);
     } catch (err) {
         console.error(err);
