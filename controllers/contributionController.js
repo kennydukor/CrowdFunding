@@ -11,6 +11,13 @@ exports.initiatePayment = async (req, res) => {
     try {
       const campaign = await Campaign.findByPk(campaignId);
       if (!campaign) return res.status(404).json({ msg: 'Campaign not found' });
+
+      // 🔒 Ensure campaign is active and approved
+      if (!campaign.isComplete || campaign.status !== 'approved') {
+        return res.status(400).json({
+          msg: 'This campaign is not open for contributions. It must be approved and active.',
+        });
+      }
   
       const user = await User.findByPk(req.userId);
       if (!user) return res.status(404).json({ msg: 'User not found' });
@@ -29,12 +36,13 @@ exports.initiatePayment = async (req, res) => {
         transactionId: systemTransactionId,
       });
   
+    // TODO: how do we handle contributing money for different currencies and then recievnng primarily with nira and dollar and pounds and euro and CAD first
       const transaction = await FundingLog.create({
         campaignId,
         userId: req.userId,
         paymentProviderId,
         amount,
-        currency: campaign.currency || 'NGN', // fallback
+        currency: campaign.currency, 
         paymentMethod,
         systemTransactionId,
         status: 'pending',
@@ -43,7 +51,6 @@ exports.initiatePayment = async (req, res) => {
           userPhone: user.phone,
           campaignTitle: campaign.title,
           paymentLink: paymentLink,
-          // ...anything else you'd like to log
         },
       });
   
@@ -141,7 +148,7 @@ exports.handlePaymentCallback = async (req, res) => {
                   fundingLog
                 });
               }
-              
+
             const contribution = await Contribution.create({
                 campaignId: fundingLog.campaignId,
                 contributorId: fundingLog.userId,

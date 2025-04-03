@@ -1,5 +1,3 @@
-// services/paymentService.js
-
 const paystackService = require('./providers/paystackService');
 const flutterwaveService = require('./providers/flutterwaveService');
 const stripeService = require('./providers/stripeService');
@@ -15,9 +13,9 @@ const providers = {
 exports.generatePaymentLink = async ({ providerKey, amount, user, campaign, transactionId }) => {
   const provider = providers[providerKey];
 
-  if (!provider || typeof provider.generateLink !== 'function') {
+  if (!provider || typeof provider.generatePaymentLink !== 'function') {
     throw new Error(`Payment provider "${providerKey}" not supported`);
   }
 
-  return await provider.generateLink({ amount, user, campaign, transactionId });
+  return await provider.generatePaymentLink({ amount, user, campaign, transactionId });
 };
