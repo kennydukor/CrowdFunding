@@ -29,6 +29,6 @@ exports.generatePaymentLink = async ({ amount, user, campaign, transactionId }) 
     // 🛑 Stop and throw an error
     throw new Error(response.data.message || 'Failed to initialize payment');
   }
-  
-  return response.data.data.authorization_url;
+
+  return response.data.data.access_code;
 };

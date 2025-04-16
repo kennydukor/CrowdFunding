@@ -31,22 +31,37 @@ const FundingLog = sequelize.define('FundingLog', {
       key: 'id',
     },
   },
-  amount: {
-    type: DataTypes.DECIMAL(10, 2),
-    allowNull: false,
+
+    /** ───────────────────────────────────
+     *  AMOUNTS & CURRENCY
+     * ─────────────────────────────────── */
+    amountRequested: {               // what donor intended to pay
+    type      : DataTypes.DECIMAL(10,2),
+    allowNull : false,
   },
-  receivedAmount: {
-    type: DataTypes.DECIMAL(10, 2),
-    allowNull: true,
+  requestCurrency: {               // currency shown on PSP checkout
+    type      : DataTypes.STRING,  // ISO code → "USD"
+    allowNull : false,
   },
-  amountMismatch: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false,
+  receivedAmount: {                // settled amount (after fees) in requestCurrency
+    type      : DataTypes.DECIMAL(10,2),
+    allowNull : true,
   },
-  currency: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    defaultValue: 'NGN', // Optional: set a default
+  baseAmount: {                    // converted to campaign.currency
+    type      : DataTypes.DECIMAL(10,2),
+    allowNull : true,
+  },
+  baseCurrency: {                  // campaign.currency snapshot (“NGN” / “USD” / …)
+    type      : DataTypes.STRING,
+    allowNull : false,
+  },
+  fxRate: {                        // rate used for conversion
+    type      : DataTypes.DECIMAL(12,6),
+    allowNull : true,
+  },
+  amountMismatch: {                // flag any discrepancy
+    type         : DataTypes.BOOLEAN,
+    defaultValue : false,
   },
   paymentMethod: {
     type: DataTypes.STRING,

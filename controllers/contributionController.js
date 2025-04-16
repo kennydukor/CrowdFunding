@@ -6,31 +6,45 @@ const { sendEmailNotification } = require('./notificationController'); // Import
 const { generatePaymentLink } = require('../services/paymentService');
 
 exports.initiatePayment = async (req, res) => {
-    const { campaignId, amount, paymentMethod, paymentProviderId } = req.body;
+    const { campaignId, amount, requestCurrency, paymentMethod, paymentProviderId } = req.body;
   
     try {
-      const campaign = await Campaign.findByPk(campaignId);
-      if (!campaign) return res.status(404).json({ msg: 'Campaign not found' });
+        const campaign = await Campaign.findByPk(campaignId);
+        if (!campaign) return res.status(404).json({ msg: 'Campaign not found' });
 
-      // 🔒 Ensure campaign is active and approved
-      if (!campaign.isComplete || campaign.status !== 'approved') {
+        // 🔒 Ensure campaign is active and approved
+        if (!campaign.isComplete || campaign.status !== 'approved') {
+            return res.status(400).json({
+            msg: 'This campaign is not open for contributions. It must be approved and active.',
+            });
+        }
+    
+        const user = await User.findByPk(req.userId);
+        if (!user) return res.status(404).json({ msg: 'User not found' });
+    
+        const paymentProvider = await PaymentProvider.findByPk(paymentProviderId);
+        if (!paymentProvider) return res.status(400).json({ msg: 'Invalid payment provider' });
+    
+        const systemTransactionId = `sys_${Date.now()}`;
+
+        /* -- optional FX look‑up if requestCurrency !== campaign.currency -- */
+        let fxRate   = null;
+        let baseAmt  = null;
+        if (requestCurrency && requestCurrency !== campaign.currency) {
+        // fetch live or cached FX rate here
+        // fxRate = await getRate(requestCurrency, campaign.currency);
+        fxRate = 1; // Placeholder for actual FX rate lookup
+        baseAmt = (parseFloat(amount) * fxRate).toFixed(2);
         return res.status(400).json({
-          msg: 'This campaign is not open for contributions. It must be approved and active.',
+            msg: 'Currency conversion not supported yet. Please use the campaign currency.',
         });
-      }
-  
-      const user = await User.findByPk(req.userId);
-      if (!user) return res.status(404).json({ msg: 'User not found' });
-  
-      const paymentProvider = await PaymentProvider.findByPk(paymentProviderId);
-      if (!paymentProvider) return res.status(400).json({ msg: 'Invalid payment provider' });
-  
-      const systemTransactionId = `sys_${Date.now()}`;
+        }
   
       // Generate the payment link using the appropriate service
-      const paymentLink = await generatePaymentLink({
-        providerKey: paymentProvider.key, // Example: 'paystack'
+      const checkoutInfo = await generatePaymentLink({
+        providerKey: paymentProvider.key,
         amount,
+        currency: requestCurrency,
         user,
         campaign,
         transactionId: systemTransactionId,
@@ -41,8 +55,11 @@ exports.initiatePayment = async (req, res) => {
         campaignId,
         userId: req.userId,
         paymentProviderId,
-        amount,
-        currency: campaign.currency, 
+        amountRequested: amount,
+        requestCurrency,
+        baseAmount: baseAmt,
+        baseCurrency: requestCurrency,
+        fxRate,
         paymentMethod,
         systemTransactionId,
         status: 'pending',
@@ -50,7 +67,7 @@ exports.initiatePayment = async (req, res) => {
           userEmail: user.email,
           userPhone: user.phone,
           campaignTitle: campaign.title,
-          paymentLink: paymentLink,
+          checkoutInfo: checkoutInfo,
         },
       });
   
