@@ -1,6 +1,7 @@
 const cloudinary = require('../utils/cloudinary');
 const slugify = require('slugify');
-const { Campaign, Country, Category, Beneficiary, User } = require('../models');
+const { Campaign, Country, Category, Beneficiary, User, Contribution } = require('../models');
+const { fn, col, Op, literal } = require('sequelize');
 
 exports.startCampaign = async (req, res) => {
   const { title, description, location, country, category, beneficiary } = req.body;
@@ -114,31 +115,6 @@ exports.setGoal = async (req, res) => {
     }
 };
   
-
-// exports.uploadVideo = async (req, res) => {
-//   try {
-//       const campaign = await Campaign.findByPk(req.params.campaignId);
-//       if (!campaign) return res.status(404).json({ msg: 'Campaign not found' });
-
-//       if (campaign.owner !== req.userId) {
-//           return res.status(401).json({ msg: 'User not authorized' });
-//       }
-
-//       if (!req.file) {
-//           return res.status(400).json({ msg: 'No video file uploaded' });
-//       }
-
-//       // Get video URL from Multer upload
-//       campaign.videoUrl = req.file.path; // Cloudinary already provides the URL
-
-//       await campaign.save();
-
-//       res.status(200).json({ msg: 'Video uploaded successfully', videoUrl: campaign.videoUrl });
-//   } catch (err) {
-//       console.error(err);
-//       res.status(500).send('Server error: ' + err.message);
-//   }
-// };
 
 exports.uploadVideo = async (req, res) => {
   const { videoUrl } = req.body;
@@ -440,6 +416,99 @@ exports.reviewCampaign = async (req, res) => {
       res.status(500).send('Server error: ' + err.message);
     }
 };  
+
+exports.getUserCampaignAnalytics = async (req, res) => {
+  try {
+    const campaigns = await Campaign.findAll({
+      where: { owner: req.userId },
+      attributes: ['id', 'title', 'goalAmount', 'raisedAmount'],
+    });
+
+    const campaignIds = campaigns.map(c => c.id);
+
+    const totalRaised = campaigns.reduce((sum, c) => sum + parseFloat(c.raisedAmount || 0), 0);
+
+    const totalContributors = await Contribution.count({
+      where: { campaign: campaignIds }
+    });
+
+    res.json({
+      campaignCount: campaigns.length,
+      totalRaised,
+      totalContributors
+    });
+  } catch (err) {
+    console.error('Error getting campaign analytics:', err);
+    res.status(500).send('Server error ' + err.message);
+  }
+};
+
+exports.getCampaignStats = async (req, res) => {
+  try {
+    const { campaignId } = req.params;
+    const frequency = req.query.frequency || 'monthly'; // or 'daily'
+
+    // 🔍 Fetch campaign
+    const campaign = await Campaign.findOne({
+      where: {
+        id: campaignId,
+        status: 'approved',
+        isComplete: true
+      },
+      attributes: ['id', 'title', 'goalAmount', 'raisedAmount']
+    });
+    
+    if (!campaign) {
+      return res.status(404).json({ msg: 'Campaign not found or not eligible' });
+    }
+
+    // 👥 Contributor count
+    const contributorCount = await Contribution.count({
+      where: { campaign: campaignId }
+    });
+
+    // 💰 Contributions total
+    const contributions = await Contribution.findAll({
+      where: { campaign: campaignId },
+      attributes: ['amount']
+    });
+
+    const totalRaised = contributions.reduce((sum, c) => sum + parseFloat(c.amount), 0);
+    const goalProgress = campaign.goalAmount > 0
+      ? ((totalRaised / campaign.goalAmount) * 100).toFixed(2)
+      : null;
+
+    // 📊 Time-series trend data
+    const dateUnit = frequency === 'daily' ? 'day' : 'month';
+
+    const trendData = await Contribution.findAll({
+      where: { campaign: campaignId },
+      attributes: [
+        [fn('DATE_TRUNC', dateUnit, col('createdAt')), 'period'],
+        [fn('SUM', col('amount')), 'amount']
+      ],
+      group: ['period'],
+      order: [[literal('period'), 'ASC']],
+      raw: true
+    });
+
+    res.json({
+      campaignId: campaign.id,
+      title: campaign.title,
+      totalRaised,
+      goalAmount: campaign.goalAmount,
+      goalProgress: goalProgress ? `${goalProgress}%` : null,
+      contributorCount,
+      trend: trendData.map(entry => ({
+        date: entry.period,
+        amount: parseFloat(entry.amount)
+      }))
+    });
+  } catch (err) {
+    console.error('Error getting campaign stats:', err);
+    res.status(500).send('Server error');
+  }
+};
 
 exports.getCampaignEnums = (req, res) => {
     res.json({
