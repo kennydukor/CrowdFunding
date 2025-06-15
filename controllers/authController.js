@@ -5,6 +5,8 @@ const { generateOTP, verifyOTP } = require('../utils/otpUtility');
 const { sendOTPEmail, sendWelcomeEmail } = require('./notificationController');
 const Interest = require('../models/Interest');
 const { sendSuccess, sendError, validatePassword} = require('../utils/general');
+const { Op } = require('sequelize');
+
 
 const OTP_EXPIRY_TIME = process.env.OTP_EXPIRY_TIME || 300000; // Default to 5 minutes
 
@@ -246,8 +248,14 @@ exports.login = async (req, res) => {
 exports.deleteUnverifiedUsers = async (req, res) => {
     const expirationTime = Date.now() - 60 * 24 * 60 * 60 * 1000; // 60 days ago
     try {
-        const result = await User.deleteMany({ isVerified: false, createdAt: { $lt: expirationTime } });
-        return sendSuccess(res, `Deleted ${result} unverified user(s).`);
+        const deletedCount = await User.destroy({
+            where: {
+                isVerified: false,
+                createdAt: { [Op.lt]: expirationTime }
+            }
+        });
+
+        return sendSuccess(res, `Deleted ${deletedCount} unverified user(s).`);
     } catch (err) {
         console.error('Error deleting unverified users:', err);
         return sendError(res, 'Failed to delete unverified users');

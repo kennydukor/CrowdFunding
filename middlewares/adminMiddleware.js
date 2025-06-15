@@ -1,21 +1,31 @@
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const {sendError} = require('../utils/general');
 
 const adminMiddleware = (req, res, next) => {
     const authHeader = req.header('Authorization');
     if (!authHeader) {
-        return res.status(401).json({ msg: 'No token, authorization denied' });
+        return sendError(res, 'No token, authorization denied', {
+            errorCode: 'NO_AUTH_HEADER',
+            status: 401
+        });
     }
     
     const token = authHeader.split(' ')[1];
     if (!token) {
-        return res.status(401).json({ msg: 'No token, authorization denied' });
+        return sendError(res, 'No token, authorization denied', {
+            errorCode: 'NO_TOKEN',
+            status: 401
+        });
     }
 
     // Expect the body signature to be provided in this header
     const bodySignature = req.header('X-Body-Signature');
     if (!bodySignature) {
-        return res.status(401).json({ msg: 'No body signature provided' });
+        return sendError(res, 'No body signature provided', {
+            errorCode: 'NO_BODY_SIGNATURE',
+            status: 401
+        });
     }
 
     try {
@@ -30,7 +40,10 @@ const adminMiddleware = (req, res, next) => {
 
         // Compare the computed signature with the one provided by the client
         if (computedSignature !== bodySignature) {
-            return res.status(401).json({ msg: 'Request body integrity check failed' });
+            return sendError(res, 'Request body integrity check failed', {
+                errorCode: 'INVALID_BODY_SIGNATURE',
+                status: 401
+            });
         }
 
         // Attach decoded values to the request
@@ -39,15 +52,25 @@ const adminMiddleware = (req, res, next) => {
 
         // Ensure the user has admin role
         if (req.role !== 'admin') {
-            return res.status(403).json({ msg: 'Admin access only' });
+            return sendError(res, 'Admin access only', {
+                errorCode: 'FORBIDDEN',
+                status: 403
+            });
         }
 
         next();
     } catch (err) {
         if (err.name === 'TokenExpiredError') {
-            return res.status(401).json({ msg: 'Token has expired, please log in again' });
+            return sendError(res, 'Token has expired, please log in again', {
+                errorCode: 'TOKEN_EXPIRED',
+                status: 401
+            });
         }
-        res.status(401).json({ msg: 'Token is not valid' });
+
+        return sendError(res, 'Token is not valid', {
+            errorCode: 'INVALID_TOKEN',
+            status: 401
+        });
     }
 };
 
