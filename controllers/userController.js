@@ -73,6 +73,12 @@ exports.updateProfile = async (req, res) => {
         delete userResponse.otpExpire;
         delete userResponse.resetPasswordToken;
         delete userResponse.resetPasswordExpire;
+        delete userResponse.id;
+        delete userResponse.KYCDocument;
+        delete userResponse.otpRequestCount;
+        delete userResponse.otpRequestTimestamp;
+        delete userResponse.createdAt;
+        delete userResponse.updatedAt;
 
         return sendSuccess(res, 'Profile updated successfully', userResponse);
 
