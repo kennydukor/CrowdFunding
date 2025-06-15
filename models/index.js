@@ -10,6 +10,7 @@ const PrivateCampaign = require('./PrivateCampaign');
 const PrivateCampaignShare = require('./PrivateCampaignShare');
 const PaymentProvider = require('./PaymentProvider');
 const FundingLog = require('./FundingLog');
+const Interest = require('./Interest')
 
 // ========== RELATIONSHIPS ==========
 
@@ -70,6 +71,9 @@ FundingLog.belongsTo(Campaign, { foreignKey: 'campaignId' });
 PaymentProvider.hasMany(FundingLog, { foreignKey: 'paymentProviderId' });
 FundingLog.belongsTo(PaymentProvider, { foreignKey: 'paymentProviderId' });
 
+User.belongsToMany(Interest, { through: 'user_interests', foreignKey: 'userId' });
+Interest.belongsToMany(User, { through: 'user_interests', foreignKey: 'interestId' });
+
 
 // ========== EXPORT ALL MODELS ==========
 module.exports = {
@@ -84,5 +88,6 @@ module.exports = {
   Beneficiary,
   Country,
   PaymentProvider,
-  FundingLog
+  FundingLog,
+  Interest
 };

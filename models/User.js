@@ -30,18 +30,15 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING,
   },
   gender: {
-    type: DataTypes.STRING,
+  type: DataTypes.ENUM('male', 'female', 'others'),
+  allowNull: true,
   },
   organizationName: {
     type: DataTypes.STRING,
   },
   userType: {
-    type: DataTypes.ENUM('Individual', 'Non-Profit', 'Admin'),
+    type: DataTypes.ENUM('Individual', 'Organization', 'Admin'),
     allowNull: false,
-  },
-  interests: {
-    type: DataTypes.ARRAY(DataTypes.STRING),
-    defaultValue: [],
   },
   role: {
     type: DataTypes.ENUM('user', 'admin'),

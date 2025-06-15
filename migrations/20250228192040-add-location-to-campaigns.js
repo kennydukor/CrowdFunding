@@ -23,11 +23,11 @@ module.exports = {
     // Remove location column
     await queryInterface.removeColumn('campaigns', 'location');
 
-    // Revert currency column back to INTEGER
-    await queryInterface.changeColumn('campaigns', 'currency', {
-      type: Sequelize.INTEGER,
-      allowNull: true,
-    });
+    // // Revert currency column back to INTEGER
+    // await queryInterface.changeColumn('campaigns', 'currency', {
+    //   type: Sequelize.INTEGER,
+    //   allowNull: true,
+    // });
   }
 };
 

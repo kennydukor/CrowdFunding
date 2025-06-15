@@ -3,6 +3,8 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { generateOTP, verifyOTP } = require('../utils/otpUtility');
 const { sendOTPEmail, sendWelcomeEmail } = require('./notificationController');
+const Interest = require('../models/Interest');
+
 
 // const generateOTP = () => {
 //     return Math.floor(100000 + Math.random() * 900000).toString(); // Generate a 6-digit OTP
@@ -26,13 +28,17 @@ exports.signup = async (req, res) => {
             middleName,
             lastName,
             gender,
-            organizationName,
+            organizationName: userType === 'Individual' ? null : organizationName || null,
             userType,
-            interests,  // store as JSON/array if your model allows
             role,
             otp,
             otpExpire,
           });
+
+        // Associate interests using the join table. This should be an array of interest IDs
+        if (Array.isArray(interests) && interests.length > 0) {
+        await newUser.setInterests(interests); // Sequelize magic method for many-to-many
+        }
 
         // Send OTP email and check if it was successful
         const otpResponse = await sendOTPEmail(newUser);
@@ -157,3 +163,14 @@ exports.deleteUnverifiedUsers = async (req, res) => {
     }
 };
 
+exports.getInterests = async (req, res) => {
+  try {
+    const interests = await Interest.findAll({
+      attributes: ['id', 'label', 'description']
+    });
+    res.status(200).json(interests);
+  } catch (err) {
+    console.error('Error fetching interests:', err);
+    res.status(500).send('Server error');
+  }
+};
