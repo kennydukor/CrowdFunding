@@ -7,7 +7,6 @@ const Interest = require('../models/Interest');
 const { sendSuccess, sendError, validatePassword} = require('../utils/general');
 const { Op } = require('sequelize');
 
-
 const OTP_EXPIRY_TIME = process.env.OTP_EXPIRY_TIME || 300000; // Default to 5 minutes
 
 exports.signup = async (req, res) => {
