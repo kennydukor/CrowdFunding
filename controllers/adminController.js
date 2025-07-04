@@ -41,7 +41,7 @@ exports.rejectCampaign = async (req, res) => {
 
 exports.blockUser = async (req, res) => {
     try {
-        const user = await User.findById(req.params.userId);
+        const user = await User.findByPk(req.params.userId);
         if (!user) return res.status(404).json({ msg: 'User not found' });
 
         user.status = 'blocked';
