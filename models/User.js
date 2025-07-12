@@ -67,6 +67,14 @@ const User = sequelize.define('User', {
   KYCDocument: {
     type: DataTypes.STRING,
   },
+  status:{
+    type: DataTypes.ENUM('blocked', 'active','inactive'),
+    defaultValue: "active",
+  },
+  numberOfFailedLoginAuthAttempt: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+  },
   otpRequestCount: {
     type: DataTypes.INTEGER,
     defaultValue: 0,

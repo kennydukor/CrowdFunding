@@ -5,7 +5,7 @@ const Category = require('./CampaignCategory');
 const Beneficiary = require('./CampaignBeneficiary');
 const sequelize = require('../utils/db');
 
-const Campaign = sequelize.define('Campaign', {
+const Campaigns = sequelize.define('Campaigns', {
   title: {
     type: DataTypes.STRING,
     allowNull: false,
@@ -90,4 +90,4 @@ const Campaign = sequelize.define('Campaign', {
   timestamps: true,
 });
 
-module.exports = Campaign;
+module.exports = Campaigns;
