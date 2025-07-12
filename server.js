@@ -23,11 +23,11 @@ const app = express();
 
 // CORS Middleware
 app.use(
-  cors({
-    origin: '*', // Replace '*' with the specific frontend URL in production for better security
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], // Allowed methods
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Body-Signature'], // Allowed headers
-  }),
+ cors({
+  origin: '*', // Replace '*' with the specific frontend URL in production for better security
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], // Allowed methods
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Body-Signature'], // Allowed headers
+ }),
 );
 
 // app.use(express.json());
@@ -37,7 +37,7 @@ app.use(morgan('dev'));
 
 // Health Check Route
 app.get('/', (req, res) => {
-  res.status(200).send('Server is healthy');
+ res.status(200).send('Server is healthy');
 });
 
 // Route Middleware
@@ -54,20 +54,20 @@ app.use('/api/enums', enumsRoutes);
 app.use('/api/analytics', analyticsRoutes);
 
 app.all('*', (req, res, next) => {
-  return next(new Error('Route not found'));
+ return next(new Error('Route not found. The route you are looking for does not exist or has been moved'));
 });
 
 app.use((err, req, res, next) => {
-  console.error(`Error: ${err.message}\nStack: ${err.stack}`);
+ console.error(`Error: ${err.message}\nStack: ${err.stack}`);
 
-  const status = err.status || 500;
-  const isDevelopment = process.env.NODE_ENV === 'development';
+ const status = err.status || 500;
+ const isDevelopment = process.env.NODE_ENV === 'development';
 
-  return res.status(status).json({
-    success: false,
-    message: err.message || 'Something went wrong',
-    ...(isDevelopment && { stack: err.stack }),
-  });
+ return res.status(status).json({
+  success: false,
+  message: err.message || 'Something went wrong',
+  ...(isDevelopment && { stack: err.stack }),
+ });
 });
 
 // // Connect to MongoDB
@@ -78,21 +78,21 @@ app.use((err, req, res, next) => {
 //   .catch((err) => console.error('MongoDB Connection Error;', err.message));
 
 if (process.env.NODE_ENV === 'development') {
-  (async () => {
-    try {
-      await sequelize.authenticate();
-      console.log('Sequelize DB connection established.');
+ (async () => {
+  try {
+   await sequelize.authenticate();
+   console.log('Sequelize DB connection established.');
 
-      await sequelize.sync();
-      console.log('All models synchronized.');
+   await sequelize.sync();
+   console.log('All models synchronized.');
 
-      const PORT = process.env.PORT || 5600;
-      app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-    } catch (err) {
-      console.error('Sequelize error:', err);
-      process.exit(1);
-    }
-  })();
+   const PORT = process.env.PORT || 5600;
+   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+  } catch (err) {
+   console.error('Sequelize error:', err);
+   process.exit(1);
+  }
+ })();
 } else {
-  module.exports = app;
+ module.exports = app;
 }
