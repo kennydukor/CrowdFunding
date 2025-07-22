@@ -235,6 +235,9 @@ exports.login = async (req, res) => {
                 firstName: user.firstName,
                 lastName: user.lastName,
                 email: user.email,
+                isVerified: user.isVerified,
+                KYCStatus: user.KYCStatus,
+                profilePicture: user.profilePicture,
                 role: user.role
             }
         });
