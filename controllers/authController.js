@@ -110,7 +110,7 @@ exports.resendOTP = async (req, res) => {
         const otp = generateOTP();
         user.otp = otp;
         user.otpExpire = Date.now() + OTP_EXPIRY_TIME;
-
+        console.log(otp)
         // Save the updated user
         await user.save();
 
