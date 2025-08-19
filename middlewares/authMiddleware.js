@@ -19,7 +19,7 @@ const authMiddleware = (req, res, next) => {
         });
     }
     
-    // Expect the HMAC of the request body in a custom header
+    // // Expect the HMAC of the request body in a custom header
     const bodySignature = req.header('X-Body-Signature');
     if (!bodySignature) {
         return sendError(res, 'No body signature provided', {
@@ -36,15 +36,15 @@ const authMiddleware = (req, res, next) => {
         const computedSignature = crypto.createHmac('sha256', process.env.PAYLOAD_SECRET)
             .update(JSON.stringify(req.body))
             .digest('hex');
-            
-        // Compare the computed signature to the one provided by the client
+
+        // // Compare the computed signature to the one provided by the client
         if (computedSignature !== bodySignature) {
             return sendError(res, 'Request body integrity check failed', {
                 errorCode: 'INVALID_BODY_SIGNATURE',
                 status: 401
             });
         }
-        
+        //
         // Attach the userId from the token to the request object
         req.userId = decoded.userId;
         next();

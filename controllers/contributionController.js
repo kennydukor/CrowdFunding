@@ -1,80 +1,80 @@
 const { FundingLog, PaymentProvider, Contribution, Campaign, User } = require('../models');
 const sequelize = require('../utils/db');  // Ensure transactions are handled properly (atomic operations)
 const axios = require('axios');
-
 const { sendEmailNotification } = require('./notificationController'); // Import the notification controller
 const { generatePaymentLink } = require('../services/paymentService');
 
-exports.initiatePayment = async (req, res) => {
-    const { campaignId, amount, requestCurrency, paymentMethod, paymentProviderId } = req.body;
-  
+exports.initiatePayment = async (req, res, next) => {
+
+    let { campaignId, amount, requestCurrency, paymentMethod, paymentProviderId } = req.body;
     try {
         const campaign = await Campaign.findByPk(campaignId);
-        if (!campaign) return res.status(404).json({ msg: 'Campaign not found' });
-
         // 🔒 Ensure campaign is active and approved
         if (!campaign.isComplete || campaign.status !== 'approved') {
             return res.status(400).json({
-            msg: 'This campaign is not open for contributions. It must be approved and active.',
+                msg: 'This campaign is not open for contributions. It must be approved and active.',
             });
         }
-    
+
         const user = await User.findByPk(req.userId);
-        if (!user) return res.status(404).json({ msg: 'User not found' });
-    
+        if (!user) return res.status(404).json({msg: 'User not found'});
+
         const paymentProvider = await PaymentProvider.findByPk(paymentProviderId);
-        if (!paymentProvider) return res.status(400).json({ msg: 'Invalid payment provider' });
-    
+        if (!paymentProvider) return res.status(400).json({msg: 'Invalid payment provider'});
+
         const systemTransactionId = `sys_${Date.now()}`;
 
         /* -- optional FX look‑up if requestCurrency !== campaign.currency -- */
-        let fxRate   = null;
-        let baseAmt  = null;
+        let fxRate = null;
+        let baseAmt = null;
+        let baseCurrency = campaign.currency;
         if (requestCurrency && requestCurrency !== campaign.currency) {
-        // fetch live or cached FX rate here
-        // fxRate = await getRate(requestCurrency, campaign.currency);
-        fxRate = 1; // Placeholder for actual FX rate lookup
-        baseAmt = (parseFloat(amount) * fxRate).toFixed(2);
-        return res.status(400).json({
-            msg: 'Currency conversion not supported yet. Please use the campaign currency.',
-        });
+            // fetch live or cached FX rate here
+            // fxRate = await getRate(requestCurrency, campaign.currency);
+            fxRate = 1; // Placeholder for actual FX rate lookup
+            baseAmt = (parseFloat(amount) * fxRate).toFixed(2);
+            let baseCurrency = campaign.currency;
+            return res.status(400).json({
+                msg: 'Currency conversion not supported yet. Please use the campaign currency.',
+            });
         }
-  
-      // Generate the payment link using the appropriate service
-      const checkoutInfo = await generatePaymentLink({
-        providerKey: paymentProvider.key,
-        amount,
-        currency: requestCurrency,
-        user,
-        campaign,
-        transactionId: systemTransactionId,
-      });
-  
-    // TODO: how do we handle contributing money for different currencies and then recievnng primarily with nira and dollar and pounds and euro and CAD first
-      const transaction = await FundingLog.create({
-        campaignId,
-        userId: req.userId,
-        paymentProviderId,
-        amountRequested: amount,
-        requestCurrency,
-        baseAmount: baseAmt,
-        baseCurrency: requestCurrency,
-        fxRate,
-        paymentMethod,
-        systemTransactionId,
-        status: 'pending',
-        metadata: {
-          userEmail: user.email,
-          userPhone: user.phone,
-          campaignTitle: campaign.title,
-          checkoutInfo: checkoutInfo,
-        },
-      });
-  
-      res.status(201).json({ msg: 'Payment initiated', paymentLink, transaction });
+
+        // Generate the payment link using the appropriate service
+        const checkoutInfo = await generatePaymentLink({
+            providerKey: paymentProvider.key,
+            amount,
+            currency: requestCurrency,
+            user,
+            campaign,
+            transactionId: systemTransactionId,
+        });
+        console.log(checkoutInfo);
+        // TODO: how do we handle contributing money for different currencies and then recievnng primarily with nira and dollar and pounds and euro and CAD first
+        const transaction = await FundingLog.create({
+            campaignId,
+            userId: req.userId,
+            paymentProviderId,
+            amountRequested: amount,
+            requestCurrency,
+            baseAmount: baseAmt,
+            baseCurrency: requestCurrency,
+            fxRate,
+            paymentMethod,
+            systemTransactionId,
+            status: 'pending',
+            metadata: {
+                userEmail: user.email,
+                userPhone: user.phone,
+                campaignTitle: campaign.title,
+                checkoutInfo: checkoutInfo,
+            },
+        });
+
+        res.status(201).json({msg: 'Payment initiated',authorizationUrl:checkoutInfo.authorization_url, accessCode:checkoutInfo.access_code});
     } catch (err) {
-      console.error(err);
-      res.status(500).json({ msg: 'Server error', error: err.message });
+        console.error(err);
+        // res.status(500).json({ msg: 'Server error', error: err.message });
+        next(err)
     }
   };
   

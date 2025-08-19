@@ -1,7 +1,7 @@
 // services/providers/paystack.js
 const axios = require('axios');
 
-exports.generatePaymentLink = async ({ amount, user, campaign, transactionId }) => {
+exports.generatePaymentLink = async ({ amount, user, campaign, transactionId, baseCurrency }) => {
   const paystackSecret = process.env.PAYSTACK_SECRET_KEY;
 
   const config = {
@@ -14,6 +14,7 @@ exports.generatePaymentLink = async ({ amount, user, campaign, transactionId }) 
   const payload = {
     email: user.email,
     amount: Math.round(amount * 100),
+    currency: baseCurrency,
     reference: transactionId,
     callback_url: `${process.env.BASE_URL}/api/contributions/callback?providerId=paystack`,
     metadata: {
@@ -30,5 +31,5 @@ exports.generatePaymentLink = async ({ amount, user, campaign, transactionId }) 
     throw new Error(response.data.message || 'Failed to initialize payment');
   }
 
-  return response.data.data.access_code;
+  return response.data.data;
 };
