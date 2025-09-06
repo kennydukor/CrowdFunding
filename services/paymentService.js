@@ -10,12 +10,12 @@ const providers = {
   // Add more as needed
 };
 
-exports.generatePaymentLink = async ({ providerKey, amount, user, campaign, transactionId, baseCurrency}) => {
+exports.generatePaymentLink = async ({ providerKey, amount, user, campaign, transactionId}) => {
   const provider = providers[providerKey];
 
   if (!provider || typeof provider.generatePaymentLink !== 'function') {
     throw new Error(`Payment provider "${providerKey}" not supported`);
   }
 
-  return await provider.generatePaymentLink({ amount, user, campaign, transactionId, baseCurrency});
+  return await provider.generatePaymentLink({ amount, user, campaign, transactionId});
 };

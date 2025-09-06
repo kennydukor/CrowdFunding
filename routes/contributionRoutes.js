@@ -5,7 +5,7 @@ const authMiddleware = require('../middlewares/authMiddleware');
 const router = express.Router();
 
 router.post('/', authMiddleware,initiatePayment);
-// router.post('/', handlePaymentCallback);
+router.post('/webhook', handlePaymentCallback);
 router.get('/campaign/:campaignId', getContributionsByCampaign);
 router.get('/user', authMiddleware, getContributionsByUser);
 

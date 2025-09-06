@@ -1,7 +1,7 @@
 // services/providers/paystack.js
 const axios = require('axios');
 
-exports.generatePaymentLink = async ({ amount, user, campaign, transactionId, baseCurrency }) => {
+exports.generatePaymentLink = async ({ amount, user, campaign, transactionId}) => {
   const paystackSecret = process.env.PAYSTACK_SECRET_KEY;
 
   const config = {
@@ -14,9 +14,8 @@ exports.generatePaymentLink = async ({ amount, user, campaign, transactionId, ba
   const payload = {
     email: user.email,
     amount: Math.round(amount * 100),
-    currency: baseCurrency,
     reference: transactionId,
-    callback_url: `${process.env.BASE_URL}/api/contributions/callback?providerId=paystack`,
+    //callback_url: `${process.env.BASE_URL}/api/contributions/callback?providerId=1`,
     metadata: {
       userId: user.id,
       campaignId: campaign.id,

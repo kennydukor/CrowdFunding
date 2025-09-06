@@ -27,13 +27,13 @@ exports.initiatePayment = async (req, res, next) => {
         /* -- optional FX look‑up if requestCurrency !== campaign.currency -- */
         let fxRate = null;
         let baseAmt = null;
-        let baseCurrency = campaign.currency;
+        //let baseCurrency = campaign.currency;
         if (requestCurrency && requestCurrency !== campaign.currency) {
             // fetch live or cached FX rate here
             // fxRate = await getRate(requestCurrency, campaign.currency);
             fxRate = 1; // Placeholder for actual FX rate lookup
             baseAmt = (parseFloat(amount) * fxRate).toFixed(2);
-            let baseCurrency = campaign.currency;
+            //let baseCurrency = campaign.currency;
             return res.status(400).json({
                 msg: 'Currency conversion not supported yet. Please use the campaign currency.',
             });
@@ -70,19 +70,19 @@ exports.initiatePayment = async (req, res, next) => {
             },
         });
 
-        res.status(201).json({msg: 'Payment initiated',authorizationUrl:checkoutInfo.authorization_url, accessCode:checkoutInfo.access_code});
+        res.status(201).json({msg: 'Payment initiated',authorizationUrl:checkoutInfo.authorization_url, accessCode:checkoutInfo.access_code, reference: checkoutInfo.reference});
     } catch (err) {
         console.error(err);
         // res.status(500).json({ msg: 'Server error', error: err.message });
         next(err)
     }
   };
-  
 
 exports.handlePaymentCallback = async (req, res) => {
     try {
         // 1️⃣ Identify the payment provider from the payload
-        const { providerId } = req.query;
+        const { info } = req.body
+        console.log(info);
 
         if (!providerId) {
             return res.status(400).json({ msg: 'Payment provider ID is required' });
@@ -118,11 +118,14 @@ exports.handlePaymentCallback = async (req, res) => {
                 status = req.body.status === 'successful' ? 'successful' : 'failed';
                 break;
 
-            case 'paystack':
-                systemTransactionId = req.body.data.reference;
-                providerTransactionId = req.body.data.id;
-                receivedAmount = parseFloat(req.body.data.amount) / 100; // Convert kobo to naira
-                status = req.body.data.status === 'success' ? 'successful' : 'failed';
+            case 'paystack':const
+                event = req.body;
+                if (event === "charge.success") {
+                    systemTransactionId = event.reference;
+                    providerTransactionId = req.body.data.id;
+                    receivedAmount = parseFloat(req.body.data.amount) / 100; // Convert kobo to naira
+                }
+                //status = req.body.data.status === 'success' ? 'successful' : 'failed';
                 break;
 
             default:
