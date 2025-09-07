@@ -9,6 +9,6 @@ router.post('/verifyOTP', verifyOTP); // New route for OTP verification
 router.post('/login', login);
 router.post('/resendOTP', resendOTP);
 router.delete('/deleteUnverifiedUsers', deleteUnverifiedUsers);
-router.get('/interests', getInterests)
+router.get('/interests', getInterests);
 
 module.exports = router;
