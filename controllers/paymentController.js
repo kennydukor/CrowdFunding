@@ -4,7 +4,7 @@ const Contribution = require('../models/Contribution');
 const { sendEmailNotification } = require('./notificationController'); // Import the notification controller
 
 //TODO: is this for only bill payments?
-exports.verifyPaystackPayment = async (req, res) => {
+exports.verifyPaystackcallbackPayment = async (req, res) => {
  const { reference } = req.query;
 
  try {
@@ -74,6 +74,7 @@ const handlePaymentSuccess = async (id, amount) => {
   });
  }
 };
+
 
 exports.verifyPayPalPayment = async (req, res) => {
  const { paymentId, PayerID } = req.query;

@@ -1,5 +1,5 @@
 const express = require('express');
-const { signup, verifyOTP, login, resendOTP, deleteUnverifiedUsers, getInterests } = require('../controllers/authController'); // Include the verifyOTP function
+const {signup, verifyOTP, login, resendOTP, deleteUnverifiedUsers, getInterests } = require('../controllers/authController'); // Include the verifyOTP function
 const authMiddleware = require('../middlewares/authMiddleware');
 
 const router = express.Router();

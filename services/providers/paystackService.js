@@ -32,3 +32,4 @@ exports.generatePaymentLink = async ({ amount, user, campaign, transactionId}) =
 
   return response.data.data;
 };
+

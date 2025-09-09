@@ -4,7 +4,7 @@ const {generatePaymentLink} = require("../services/paymentService");
 
 const router = express.Router();
 
-router.get('/paystack/verify', verifyPaystackPayment);
+//router.get('/paystack/verify', verifyPaystackPayment);
 router.get('/paypal/verify', verifyPayPalPayment);
 router.post('/initializePayment', generatePaymentLink);
 module.exports = router;

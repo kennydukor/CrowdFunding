@@ -15,6 +15,7 @@ const analyticsRoutes = require('./routes/analyticsRoutes');
 const morgan = require('morgan');
 const cors = require('cors');
 const { sequelize } = require('./models');
+const webhooksRoutes = require('./routes/webhooksRoutes');
 
 // Load environment variables
 dotenv.config();
@@ -52,6 +53,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/enums', enumsRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/webhooks', webhooksRoutes);
 
 app.all('*', (req, res, next) => {
   return next(new Error('Route not found'));
