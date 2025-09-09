@@ -4,6 +4,7 @@ const axios = require('axios');
 const { sendEmailNotification } = require('./notificationController'); // Import the notification controller
 const { generatePaymentLink } = require('../services/paymentService');
 const { sendSuccess } = require('../utils/general');
+const { saveWebhookTransactionToDb } = require('../services/webhooksService');
 
 exports.initiatePayment = async (req, res, next) => {
  let { campaignId, amount, requestCurrency, paymentMethod, paymentProviderId } = req.body;
@@ -88,106 +89,68 @@ exports.initiatePayment = async (req, res, next) => {
  }
 };
 
-exports.verifyPaystackTransactionUsingWebhook = async (req, res) => {
+exports.verifyPaystackTransactionUsingWebhook = async (req, res, next) => {
  try {
-  // Verify Paystack signature to confirm this event originated from Paystack
-  const payload = JSON.stringify(req.body);
-  const paystackSecret = process.env.PAYSTACK_SECRET_KEY;
   const paystackSignature = req.headers['x-paystack-signature'];
+  const hash = crypto.createHmac('sha512', process.env.PAYSTACK_SECRET_KEY).update(JSON.stringify(req.body)).digest('hex');
 
-  if (!paystackSignature) {
-   return res.status(400).send("Paystack signature is empty");
-  }
-  const hash = crypto
-      .createHmac("sha512", paystackSecret)
-      .update(JSON.stringify(req.body))
-      .digest("hex");
-
-  if (hash !== paystackSignature) {
-   return res.status(400).send("Invalid Paystack signature");
-  }
-
-  const event = req.body;
-  const paymentProvider = await PaymentProvider.findOne({ where: { key: "paystack" } });
-  //await saveTransactionToDb(event, paymentProvider);
-
-  //Acknowledge receiving webhook
-  return res.send(200);}
- catch (error) {
-  console.error(error);
-  return res.status(500).json({ msg: "Server error", error: error.message });
- }};
-
-const saveTransactionToDb = async (event, paymentProvider) => {
-  let systemTransactionId, providerTransactionId, receivedAmount, status;
- // Parse webhook response based on provider
-  switch (paymentProvider.key.toLowerCase()) {
-   case 'stripe':
-    systemTransactionId = event.metadata.systemTransactionId;
-    providerTransactionId = event.id;
-    receivedAmount = parseFloat(event.amount) / 100; // Convert cents to dollars
-    status = event.status === 'succeeded' ? 'successful' : 'failed';
-    break;
-
-   case 'paypal':
-    systemTransactionId = event.invoice_id;
-    providerTransactionId = event.id;
-    receivedAmount = parseFloat(event.purchase_units[0].amount.value);
-    status = event.status === 'COMPLETED' ? 'successful' : 'failed';
-    break;
-
-   case 'flutterwave':
-    systemTransactionId = event.txRef;
-    providerTransactionId = event.transaction_id;
-    receivedAmount = parseFloat(event.amount);
-    status = event.status === 'successful' ? 'successful' : 'failed';
-    break;
-
-   case 'paystack':
-    systemTransactionId = event.reference;
+  if (hash === paystackSignature) {
+   const event = req.body;
+   let systemTransactionId, providerTransactionId, receivedAmount, status;
+   if (event.event === 'charge.success') {
+    systemTransactionId = event.data.reference;
     providerTransactionId = event.data.id;
-    receivedAmount = parseFloat(event.data.amount) / 100;// Convert kobo to naira
-    status = event.data.status === 'success' ? 'successful' : 'failed';
-    break;
+    receivedAmount = parseFloat(event.data.amount) / 100;
 
-   default:
-     throw new Error('Unsupported payment provider');
+    await saveWebhookTransactionToDb(
+     {
+      systemTransactionId,
+      providerTransactionId,
+      receivedAmount,
+      status,
+     },
+     'paystack',
+    );
+   }
+
+   return res.send(200);
   }
-  const fundingLog = await FundingLog.findOne({ where: { systemTransactionId } });
-  if (!fundingLog) {return { httpCode: 404, response: {msg:'Transaction not found'}};}
-  /** If already processed, ignore */
-  if (fundingLog.status !== 'pending'){return { httpCode: 400, response: {msg:'Transaction already processed'}};}
-  // Update FundingLog with providerTransactionId & status
-  fundingLog.providerTransactionId = providerTransactionId;
-  fundingLog.status = status === 'success' ? 'successful' : 'pending';
-  fundingLog.receivedAmount = receivedAmount;
-  fundingLog.amountMismatch = receivedAmount !== parseFloat(fundingLog.amountRequested);
-  await fundingLog.save();
-  // If payment is successful, create a contribution
-  if (status === 'success') {
-   if (fundingLog.amountMismatch) {return { httpCode: 200, response: {msg:'Payment received but amount mismatch detected. Manual review required.', fundinglog:{
-      id: fundingLog.id,
-      campaignId: fundingLog.campaignId,
-      userId: fundingLog.userId,
-      amountRequested: fundingLog.amountRequested,
-      requestCurrency: fundingLog.requestCurrency,
-      receivedAmount: fundingLog.receivedAmount,
-      baseCurrency: fundingLog.baseCurrency,
-      status: fundingLog.status}}};
-  const contribution = await Contribution.create({
-    campaignId: fundingLog.campaignId,
-    contributorId: fundingLog.userId,
-    amount: fundingLog.amountRequested,
-    anonymous: false,
-   });
-  await Campaign.increment('raisedAmount', {
-   by: fundingLog.amount,
-   where: { id: fundingLog.campaignId },
-  });
-  return {httpCode: 200, response: {msg: 'Payment confirmed. Contribution recorded.', contribution}};
+
+  return res.send(200);
+ } catch (error) {
+  return next(error);
  }
- return {httpCode: 400, response: {msg:'Payment failed. Contribution not recorded.'}}
-}};
+};
+exports.verifyFlutterwaveTransactionUsingWebhook = async (req, res, next) => {
+ try {
+  const flutterwaveSignature = req.headers['flutterwave-signature'];
+  const isValid = isValidFlutterwaveWebhook(req.rawBody, flutterwaveSignature, process.env.FLW_SECRET_HASH);
+
+  if (!isValid) {
+   return res.status(401).send('Invalid signature');
+  }
+
+  let systemTransactionId, providerTransactionId, receivedAmount, status;
+
+  systemTransactionId = req.body.data.txRef;
+  providerTransactionId = req.body.data.id;
+  receivedAmount = parseFloat(req.body.data.amount);
+  status = req.body.status === 'succeeded' ? 'successful' : 'failed';
+  await saveWebhookTransactionToDb(
+   {
+    systemTransactionId,
+    providerTransactionId,
+    receivedAmount,
+    status,
+   },
+   'flutterwave',
+  );
+
+  return res.send(200);
+ } catch (error) {
+  return next(error);
+ }
+};
 
 exports.getContributionsByCampaign = async (req, res) => {
  try {
@@ -211,7 +174,9 @@ exports.getContributionsByUser = async (req, res) => {
 
 exports.handlePaystackCallbackVerification = async (req, res, next) => {
  const { reference } = req.query;
- if (!reference) {return next(Error('No reference found in request'));}
+ if (!reference) {
+  return next(Error('No reference found in request'));
+ }
  try {
   const response = await axios.get(`https://api.paystack.co/transaction/verify/${reference}`, {
    headers: {
@@ -295,3 +260,9 @@ exports.handlePaystackCallbackVerification = async (req, res, next) => {
   res.status(500).json({ msg: 'Server error', error: err.message });
  }
 };
+
+function isValidFlutterwaveWebhook(rawBody, signature, secretHash) {
+ const hash = crypto.createHmac('sha256', secretHash).update(rawBody).digest('base64');
+
+ return hash === signature;
+}
