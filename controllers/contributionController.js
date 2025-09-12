@@ -5,6 +5,7 @@ const { sendEmailNotification } = require('./notificationController'); // Import
 const { generatePaymentLink } = require('../services/paymentService');
 const { sendSuccess } = require('../utils/general');
 const { saveWebhookTransactionToDb } = require('../services/webhooksService');
+const crypto = require('crypto');
 
 exports.initiatePayment = async (req, res, next) => {
  let { campaignId, amount, requestCurrency, paymentMethod, paymentProviderId } = req.body;
@@ -92,15 +93,18 @@ exports.initiatePayment = async (req, res, next) => {
 exports.verifyPaystackTransactionUsingWebhook = async (req, res, next) => {
  try {
   const paystackSignature = req.headers['x-paystack-signature'];
+
   const hash = crypto.createHmac('sha512', process.env.PAYSTACK_SECRET_KEY).update(JSON.stringify(req.body)).digest('hex');
 
   if (hash === paystackSignature) {
    const event = req.body;
+
    let systemTransactionId, providerTransactionId, receivedAmount, status;
    if (event.event === 'charge.success') {
     systemTransactionId = event.data.reference;
     providerTransactionId = event.data.id;
     receivedAmount = parseFloat(event.data.amount) / 100;
+    status = event.data.status;
 
     await saveWebhookTransactionToDb(
      {
@@ -113,10 +117,10 @@ exports.verifyPaystackTransactionUsingWebhook = async (req, res, next) => {
     );
    }
 
-   return res.send(200);
+   return res.sendStatus(200);
   }
 
-  return res.send(200);
+  return res.sendStatus(200);
  } catch (error) {
   return next(error);
  }
