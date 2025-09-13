@@ -8,7 +8,7 @@ const router = express.Router();
 router.get('/campaigns', authMiddleware, adminMiddleware, getAllCampaigns);
 router.post('/campaigns/:campaignId/approve', authMiddleware, adminMiddleware, approveCampaign);
 router.post('/campaigns/:campaignId/reject', authMiddleware, adminMiddleware, rejectCampaign);
-router.post('/users/:userId/block', authMiddleware, adminMiddleware, blockUser);
+router.put('/users/:userId/block', authMiddleware, adminMiddleware, blockUser);
 router.post('/users/:userId/unblock', authMiddleware, adminMiddleware, unblockUser);
 
 module.exports = router;
