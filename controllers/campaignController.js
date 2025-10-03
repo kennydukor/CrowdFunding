@@ -267,6 +267,7 @@ exports.getCampaigns = async (req, res) => {
         { model: Beneficiary, attributes: ['id', 'name'] },
       ],
       order: [['createdAt', 'DESC']],
+
       limit,
       offset
     });
@@ -359,7 +360,8 @@ exports.getUserCampaigns = async (req, res) => {
         { model: Country, attributes: ['id', 'country', 'currency'] },
         { model: Category, attributes: ['id', 'name'] },
         { model: Beneficiary, attributes: ['id', 'name'] },
-      ]
+      ],
+      order:[['createdAt', 'DESC']]
     });
 
     return sendSuccess(res, 'User campaigns retrieved successfully', campaigns.map(c => c.toJSON()));
