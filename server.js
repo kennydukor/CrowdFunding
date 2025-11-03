@@ -75,8 +75,8 @@ if (process.env.NODE_ENV === 'development') {
    await sequelize.authenticate();
    console.log('Sequelize DB connection established.');
 
-   await sequelize.sync();
-   console.log('All models synchronized.');
+   //  await sequelize.sync();
+   //  console.log('All models synchronized.');
 
    const PORT = process.env.PORT || 5600;
    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
