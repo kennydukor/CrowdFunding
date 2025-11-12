@@ -30,8 +30,10 @@ help:
 	@echo "-------------------------------------------"
 	@echo " make db-migrate        → Run all migrations"
 	@echo " make db-rollback       → Rollback all migrations"
-	@echo " make db-seed           → Run all seeders (e.g. Payment Providers)"
+	@echo " make db-seed           → Run seeders (e.g. Admin user)"
 	@echo " make db-seed-undo      → Undo all seeders"
+	@echo " make db-seed-all      → Undo all seeders"
+
 	@echo " make db-migration name=create-table-name → Create a new migration file"
 	@echo " make db-seeder name=seed-name            → Create a new seeder file"
 	@echo " make run               → Start the application"
