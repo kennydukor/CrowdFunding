@@ -5,89 +5,98 @@ const Category = require('./CampaignCategory');
 const Beneficiary = require('./CampaignBeneficiary');
 const sequelize = require('../utils/db');
 
-const Campaigns = sequelize.define('Campaigns', {
+const Campaigns = sequelize.define(
+ 'Campaigns',
+ {
   title: {
-    type: DataTypes.STRING,
-    allowNull: false,
+   type: DataTypes.STRING,
+   allowNull: false,
   },
   description: {
-    type: DataTypes.TEXT,
-    allowNull: false,
+   type: DataTypes.TEXT,
+   allowNull: false,
   },
   location: {
-    type: DataTypes.STRING, // Allows storing address, city, or region
-    allowNull: true, // Can be optional
+   type: DataTypes.STRING, // Allows storing address, city, or region
+   allowNull: true, // Can be optional
   },
   goalAmount: {
-    type: DataTypes.DECIMAL,
-    allowNull: true,
+   type: DataTypes.DECIMAL,
+   allowNull: true,
   },
   raisedAmount: {
-    type: DataTypes.DECIMAL,
-    defaultValue: 0,
+   type: DataTypes.DECIMAL,
+   defaultValue: 0,
   },
   deadline: {
-    type: DataTypes.DATE,
-    allowNull: true,
+   type: DataTypes.DATE,
+   allowNull: true,
   },
   media: {
-    type: DataTypes.ARRAY(DataTypes.STRING), 
-    defaultValue: [],
+   type: DataTypes.ARRAY(DataTypes.STRING),
+   defaultValue: [],
   },
   currency: {
-    type: DataTypes.TEXT, // Accomodating for cases where customers might need to use currencies different from that of the location
-    allowNull: true,
+   type: DataTypes.TEXT, // Accomodating for cases where customers might need to use currencies different from that of the location
+   allowNull: true,
   },
   story: {
-    type: DataTypes.TEXT,
+   type: DataTypes.TEXT,
   },
   coverPhoto: {
-    type: DataTypes.STRING,
+   type: DataTypes.STRING,
   },
   videoUrl: {
-    type: DataTypes.STRING,
+   type: DataTypes.STRING,
   },
   status: {
-    type: DataTypes.ENUM('pending', 'approved', 'rejected'),
-    defaultValue: 'pending',
+   type: DataTypes.ENUM('pending', 'approved', 'rejected'),
+   defaultValue: 'pending',
   },
   countryId: {
-    type: DataTypes.INTEGER,
-    references: {
-      model: Country,
-      key: 'id',
-    },
-    allowNull: false,
+   type: DataTypes.INTEGER,
+   references: {
+    model: Country,
+    key: 'id',
+   },
+   allowNull: false,
   },
   categoryId: {
-    type: DataTypes.INTEGER,
-    references: {
-      model: Category,
-      key: 'id',
-    },
-    allowNull: false,
+   type: DataTypes.INTEGER,
+   references: {
+    model: Category,
+    key: 'id',
+   },
+   allowNull: false,
   },
   beneficiaryId: {
-    type: DataTypes.INTEGER,
-    references: {
-      model: Beneficiary,
-      key: 'id',
-    },
-    allowNull: false,
+   type: DataTypes.INTEGER,
+   references: {
+    model: Beneficiary,
+    key: 'id',
+   },
+   allowNull: false,
   },
   slug: {
-    type: DataTypes.STRING,
-    unique: true,
-    allowNull: false
+   type: DataTypes.STRING,
+   unique: true,
+   allowNull: false,
   },
   // If you need an "isComplete" field:
   isComplete: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false,
-  }
-}, {
+   type: DataTypes.BOOLEAN,
+   defaultValue: false,
+  },
+  owner: {
+   type: DataTypes.INTEGER,
+   allowNull: false,
+   references: { model: 'users', key: 'id' },
+  },
+ },
+ {
   tableName: 'campaigns',
   timestamps: true,
-});
+ },
+);
 
 module.exports = Campaigns;

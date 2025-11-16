@@ -69,7 +69,7 @@ exports.signup = async (req, res) => {
     }
 
     // Send OTP email and check if it was successful
-    const otpResponse = await newUser;
+    const otpResponse = await sendOTPEmail(newUser);
     if (!otpResponse.success) {
       return sendError(res, "Failed to send OTP email", {
         errorCode: "EMAIL_ERROR",
