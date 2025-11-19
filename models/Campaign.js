@@ -4,6 +4,7 @@ const Country = require('./Countries');
 const Category = require('./CampaignCategory');
 const Beneficiary = require('./CampaignBeneficiary');
 const sequelize = require('../utils/db');
+const Contribution = require('./Contribution');
 
 const Campaigns = sequelize.define(
  'Campaigns',
@@ -98,5 +99,8 @@ const Campaigns = sequelize.define(
   timestamps: true,
  },
 );
+
+Campaigns.hasMany(Contribution, { foreignKey: 'campaign' });
+Contribution.belongsTo(Campaigns, { foreignKey: 'campaign' });
 
 module.exports = Campaigns;
