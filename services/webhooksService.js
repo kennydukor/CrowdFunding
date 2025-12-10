@@ -44,22 +44,39 @@ exports.saveWebhookTransactionToDb = async ({ systemTransactionId, providerTrans
   fundingLog.status = status === 'success' ? 'successful' : 'pending';
   fundingLog.receivedAmount = receivedAmount;
   fundingLog.amountMismatch = receivedAmount !== parseFloat(fundingLog.amountRequested);
-  if (fundingLog.amountRequested !== receivedAmount){fundingLog.status = 'failed';}
+  if (fundingLog.amountRequested !== receivedAmount) {
+   fundingLog.status = 'failed';
+  }
   await fundingLog.save();
 
   if (fundingLog.status === 'successful') {
    if (fundingLog.amountMismatch) {
     console.log('Payment received but amount mismatch detected. Manual review required.');
+
+    // res.status(200).json({
+    //  message: 'Payment received but amount mismatch detected. Manual review required.',
+    //  data: {
+    //   id: fundingLog.id,
+    //   campaignId: fundingLog.campaignId,
+    //   userId: fundingLog.userId,
+    //   amountRequested: fundingLog.amountRequested,
+    //   requestCurrency: fundingLog.requestCurrency,
+    //   receivedAmount: fundingLog.receivedAmount,
+    //   baseCurrency: fundingLog.baseCurrency,
+    //   status: fundingLog.status,
+    //  },
+    // });
    } else {
-    const contribution = await Contribution.create({
-     campaignId: fundingLog.campaignId,
+    await Contribution.create({
+     campaign: fundingLog.campaignId,
      contributorId: fundingLog.userId,
      amount: fundingLog.receivedAmount,
-     anonymous: false,
+     anonymous: !fundingLog.userId ? true : false,
+     contributorEmail: fundingLog.contributorEmail,
     });
 
     await Campaign.increment('raisedAmount', {
-     by: fundingLog.amount,
+     by: fundingLog.receivedAmount,
      where: { id: fundingLog.campaignId },
     });
    }
