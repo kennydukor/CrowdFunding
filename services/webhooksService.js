@@ -76,7 +76,7 @@ exports.saveWebhookTransactionToDb = async ({ systemTransactionId, providerTrans
     });
 
     await Campaign.increment('raisedAmount', {
-     by: fundingLog.amount,
+     by: fundingLog.receivedAmount,
      where: { id: fundingLog.campaignId },
     });
    }
