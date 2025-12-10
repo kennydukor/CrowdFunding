@@ -8,6 +8,7 @@ const { saveWebhookTransactionToDb } = require('../services/webhooksService');
 const crypto = require('crypto');
 const { validateAnonymousPayment, validatePaymentInit } = require('../dtos/payment/payment.dto');
 const ApiError = require('../utils/api-error');
+const Campaigns = require('../models/Campaign');
 
 exports.initiatePayment = async (req, res, next) => {
  //run validation
@@ -183,13 +184,48 @@ exports.getContributionsByCampaign = async (req, res) => {
  }
 };
 
-exports.getContributionsByUser = async (req, res) => {
+exports.getContributionsByUser = async (req, res, next) => {
  try {
-  const contributions = await Contribution.find({ where: { contributorId: req.userId } });
-  res.json(contributions);
+  const page = parseInt(req.query.page) || 1;
+  const pageSize = parseInt(req.query.pageSize) || 10;
+  const offset = (page - 1) * pageSize;
+
+  const contributions = await Contribution.findAll({
+   limit: pageSize,
+   offset: offset,
+   attributes: {
+    exclude: ['contributorEmail', 'contributorId'],
+   },
+   include: [
+    {
+     model: Campaigns,
+     where: { owner: req.userId },
+     attributes: [],
+    },
+    {
+     model: User,
+     attributes: ['firstName', 'lastName'],
+    },
+   ],
+  });
+
+  const totalContributions = await Campaigns.count({
+   where: { owner: req.userId },
+  });
+  const totalPages = Math.ceil(totalContributions / pageSize);
+
+  res.json({
+   data: contributions,
+   message: 'Data retrieved successfully',
+   pagination: {
+    page,
+    pageSize,
+    totalContributions,
+    totalPages,
+   },
+  });
  } catch (err) {
-  console.error(err);
-  res.status(500).send('Server error');
+  return next(err);
  }
 };
 

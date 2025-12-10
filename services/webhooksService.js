@@ -52,20 +52,6 @@ exports.saveWebhookTransactionToDb = async ({ systemTransactionId, providerTrans
   if (fundingLog.status === 'successful') {
    if (fundingLog.amountMismatch) {
     console.log('Payment received but amount mismatch detected. Manual review required.');
-
-    // res.status(200).json({
-    //  message: 'Payment received but amount mismatch detected. Manual review required.',
-    //  data: {
-    //   id: fundingLog.id,
-    //   campaignId: fundingLog.campaignId,
-    //   userId: fundingLog.userId,
-    //   amountRequested: fundingLog.amountRequested,
-    //   requestCurrency: fundingLog.requestCurrency,
-    //   receivedAmount: fundingLog.receivedAmount,
-    //   baseCurrency: fundingLog.baseCurrency,
-    //   status: fundingLog.status,
-    //  },
-    // });
    } else {
     await Contribution.create({
      campaign: fundingLog.campaignId,
