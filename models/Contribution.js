@@ -14,7 +14,23 @@ const Contribution = sequelize.define(
    type: DataTypes.BOOLEAN,
    defaultValue: false,
   },
-
+  amount: {
+   type: DataTypes.DECIMAL,
+   allowNull: false,
+  },
+  contributorId: {
+   type: DataTypes.INTEGER,
+   allowNull: true,
+   references: {
+    model: 'Users',
+    key: 'id',
+   },
+   onDelete: 'SET NULL',
+  },
+  contributorEmail: {
+   type: DataTypes.STRING,
+   allowNull: true,
+  },
   campaign: {
    type: DataTypes.INTEGER,
    allowNull: false,

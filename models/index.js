@@ -10,7 +10,7 @@ const PrivateCampaign = require('./PrivateCampaign');
 const PrivateCampaignShare = require('./PrivateCampaignShare');
 const PaymentProvider = require('./PaymentProvider');
 const FundingLog = require('./FundingLog');
-const Interest = require('./Interest')
+const Interest = require('./Interest');
 
 // ========== RELATIONSHIPS ==========
 
@@ -31,8 +31,8 @@ Beneficiary.hasMany(Campaign, { foreignKey: 'beneficiaryId' });
 Campaign.belongsTo(Beneficiary, { foreignKey: 'beneficiaryId' });
 
 // User → Contribution
-User.hasMany(Contribution, { foreignKey: 'contributor', onDelete: 'CASCADE' });
-Contribution.belongsTo(User, { foreignKey: 'contributor' });
+User.hasMany(Contribution, { foreignKey: 'contributorId', onDelete: 'CASCADE' });
+Contribution.belongsTo(User, { foreignKey: 'contributorId' });
 
 // Campaign → Contribution
 Campaign.hasMany(Contribution, { foreignKey: 'campaign', onDelete: 'CASCADE' });
@@ -74,20 +74,19 @@ FundingLog.belongsTo(PaymentProvider, { foreignKey: 'paymentProviderId' });
 User.belongsToMany(Interest, { through: 'user_interests', foreignKey: 'userId' });
 Interest.belongsToMany(User, { through: 'user_interests', foreignKey: 'interestId' });
 
-
 // ========== EXPORT ALL MODELS ==========
 module.exports = {
-  sequelize,
-  User,
-  Campaign,
-  Contribution,
-  Flag,
-  PrivateCampaign,
-  PrivateCampaignShare,
-  Category,
-  Beneficiary,
-  Country,
-  PaymentProvider,
-  FundingLog,
-  Interest
+ sequelize,
+ User,
+ Campaign,
+ Contribution,
+ Flag,
+ PrivateCampaign,
+ PrivateCampaignShare,
+ Category,
+ Beneficiary,
+ Country,
+ PaymentProvider,
+ FundingLog,
+ Interest,
 };

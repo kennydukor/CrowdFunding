@@ -68,4 +68,14 @@ module.exports = class ApiError extends Error {
  static internal(message) {
   return new ApiError(message, 500);
  }
+
+ /**
+  * Creates a standardized validation error (ideal for Joi).
+  *
+  * @param error- The Joi validation error object.
+  * @returns {ApiError}
+  */
+ static validationError(error) {
+  return new ApiError('Validation Error', 422, error, true);
+ }
 };

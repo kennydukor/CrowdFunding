@@ -19,7 +19,7 @@ const FundingLog = sequelize.define(
   },
   userId: {
    type: DataTypes.INTEGER,
-   allowNull: false,
+   allowNull: true,
    references: {
     model: 'users',
     key: 'id',
@@ -93,6 +93,15 @@ const FundingLog = sequelize.define(
   metadata: {
    type: DataTypes.JSONB,
    allowNull: true, // Optional details (provider response, etc.)
+  },
+  isAnonymous: {
+   type: DataTypes.BOOLEAN,
+   allowNull: true,
+   defaultValue: false,
+  },
+  contributorEmail: {
+   type: DataTypes.STRING,
+   allowNull: true,
   },
  },
  {

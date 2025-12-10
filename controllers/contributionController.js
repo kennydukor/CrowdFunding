@@ -1,16 +1,34 @@
 const { FundingLog, PaymentProvider, Contribution, Campaign, User } = require('../models');
 const sequelize = require('../utils/db'); // Ensure transactions are handled properly (atomic operations)
 const axios = require('axios');
-const { sendEmailNotification } = require('./notificationController'); // Import the notification controller
-const { generatePaymentLink } = require('../services/paymentService');
+const { sendEmailNotification, sendContributionNotificationToOwner, sendContributionConfirmationToContributor } = require('./notificationController'); // Import the notification controller
+const { generatePaymentLink, anonymousPaymentLink } = require('../services/paymentService');
 const { sendSuccess } = require('../utils/general');
 const { saveWebhookTransactionToDb } = require('../services/webhooksService');
 const crypto = require('crypto');
+const { validateAnonymousPayment, validatePaymentInit } = require('../dtos/payment/payment.dto');
+const ApiError = require('../utils/api-error');
 
 exports.initiatePayment = async (req, res, next) => {
- let { campaignId, amount, requestCurrency, paymentMethod, paymentProviderId } = req.body;
+ //run validation
+ const { error, value } = validatePaymentInit(req.body);
+
+ if (error) {
+  const messages = error.details.map((err) => err.message);
+  return next(
+   ApiError.validationError({
+    data: messages,
+   }),
+  );
+ }
+
+ let { campaignId, amount, requestCurrency, paymentMethod, paymentProviderId } = value;
  try {
   const campaign = await Campaign.findByPk(campaignId);
+
+  if (!campaign) {
+   return next(ApiError.notFound('Could not find any record for the given campaign data.'));
+  }
 
   // 🔒 Ensure campaign is active and approved
   if (!campaign.isComplete || campaign.status !== 'approved') {
@@ -19,8 +37,8 @@ exports.initiatePayment = async (req, res, next) => {
    });
   }
 
-  const user = await User.findByPk(req.userId);
-  if (!user) return res.status(404).json({ msg: 'User not found' });
+  // const user = await User.findByPk(req.userId);
+  // if (!user) return res.status(404).json({ msg: 'User not found' });
 
   const paymentProvider = await PaymentProvider.findByPk(paymentProviderId);
   if (!paymentProvider) return res.status(400).json({ msg: 'Invalid payment provider' });
@@ -51,7 +69,6 @@ exports.initiatePayment = async (req, res, next) => {
    campaign,
    transactionId: systemTransactionId,
   });
-  console.log(checkoutInfo);
   // TODO: how do we handle contributing money for different currencies and then receiving primarily with naira and dollar and pounds and euro and CAD first
   const transaction = await FundingLog.create({
    campaignId,
@@ -84,7 +101,6 @@ exports.initiatePayment = async (req, res, next) => {
    201,
   );
  } catch (err) {
-  console.error(err);
   // res.status(500).json({ msg: 'Server error', error: err.message });
   next(err);
  }
@@ -125,6 +141,7 @@ exports.verifyPaystackTransactionUsingWebhook = async (req, res, next) => {
   return next(error);
  }
 };
+
 exports.verifyFlutterwaveTransactionUsingWebhook = async (req, res, next) => {
  try {
   const flutterwaveSignature = req.headers['flutterwave-signature'];
@@ -168,7 +185,7 @@ exports.getContributionsByCampaign = async (req, res) => {
 
 exports.getContributionsByUser = async (req, res) => {
  try {
-  const contributions = await Contribution.find({ where: { contributor: req.userId } });
+  const contributions = await Contribution.find({ where: { contributorId: req.userId } });
   res.json(contributions);
  } catch (err) {
   console.error(err);
@@ -179,7 +196,7 @@ exports.getContributionsByUser = async (req, res) => {
 exports.handlePaystackCallbackVerification = async (req, res, next) => {
  const { reference } = req.query;
  if (!reference) {
-  return next(Error('No reference found in request'));
+  return next(ApiError.badRequest('No reference found in request'));
  }
  try {
   const response = await axios.get(`https://api.paystack.co/transaction/verify/${reference}`, {
@@ -188,6 +205,7 @@ exports.handlePaystackCallbackVerification = async (req, res, next) => {
     'Content-Type': 'application/json',
    },
   });
+  console.log(response);
 
   const paymentProvider = await PaymentProvider.findOne({
    where: {
@@ -196,34 +214,44 @@ exports.handlePaystackCallbackVerification = async (req, res, next) => {
   });
 
   if (!paymentProvider) {
-   return res.status(400).json({ msg: 'Invalid payment provider' });
+   return next(ApiError.badRequest('Invalid payment provider'));
   }
 
-  let systemTransactionId, providerTransactionId, receivedAmount, status;
+  // let systemTransactionId, providerTransactionId, receivedAmount, status;
 
-  const event = response.data?.data;
-  systemTransactionId = event.reference;
-  providerTransactionId = event.id;
-  status = event.status;
-  receivedAmount = parseFloat(event.amount) / 100; // Convert kobo to naira
+  const event = response.data?.data,
+   systemTransactionId = event.reference,
+   providerTransactionId = event.id,
+   status = event.status,
+   receivedAmount = parseFloat(event.amount) / 100; // Convert kobo to naira
 
-  /** 3️⃣ Find funding log by system transaction ID*/
-  const fundingLog = await FundingLog.findOne({ where: { systemTransactionId } });
+  const fundingLog = await FundingLog.findOne({
+   where: { systemTransactionId },
+   include: [
+    {
+     model: Campaign,
+     include: [
+      {
+       model: User, // Include the campaign owner (User)
+       //  as: 'owner',
+      },
+     ],
+    },
+   ],
+  });
 
   if (!fundingLog) {
-   return res.status(404).json({ msg: 'Transaction not found' });
-  }
-  /** If already processed, ignore */
-  if (fundingLog.status !== 'pending') {
-   return res.status(400).json({ msg: 'Transaction already processed' });
+   return next(ApiError.badRequest('Transaction not found'));
   }
 
-  // 5️⃣ Update FundingLog with providerTransactionId & status
+  // if (fundingLog.status !== 'pending') {
+  //  throw ApiError.badRequest('Transaction already processed');
+  // }
+
   fundingLog.providerTransactionId = providerTransactionId;
   fundingLog.status = status === 'success' ? 'successful' : 'pending';
   fundingLog.receivedAmount = receivedAmount;
   fundingLog.amountMismatch = receivedAmount !== parseFloat(fundingLog.amountRequested);
-  await fundingLog.save();
 
   // 6️⃣ If payment is successful, create a contribution
   if (status === 'success') {
@@ -244,24 +272,35 @@ exports.handlePaystackCallbackVerification = async (req, res, next) => {
     });
    }
 
-   const contribution = await Contribution.create({
-    campaignId: fundingLog.campaignId,
-    contributorId: fundingLog.userId,
-    amount: fundingLog.amountRequested,
-    anonymous: false,
-   });
+   console.log(fundingLog.Campaign);
 
-   await Campaign.increment('raisedAmount', {
-    by: fundingLog.amount,
-    where: { id: fundingLog.campaignId },
-   });
-   return sendSuccess(res, 'Payment confirmed. Contribution recorded.', contribution, 200);
+   //  await Contribution.create({
+   //   campaign: fundingLog.campaignId,
+   //   contributorId: fundingLog.userId,
+   //   amount: fundingLog.amountRequested,
+   //   anonymous: !fundingLog.userId ? true : false,
+   //   contributorEmail: fundingLog.contributorEmail,
+   //  });
+   //  await fundingLog.save();
+
+   //  await Campaign.increment('raisedAmount', {
+   //   by: parseFloat(fundingLog.receivedAmount),
+   //   where: { id: fundingLog.campaignId },
+   //  });
+
+   await sendContributionNotificationToOwner(fundingLog.Campaign.User, fundingLog.Campaign.title, fundingLog.amountRequested, fundingLog.requestCurrency);
+
+   // 2. Send confirmation to the anonymous contributor (if email exists)
+   if (fundingLog.contributorEmail && fundingLog.isAnonymous) {
+    await sendContributionConfirmationToContributor(fundingLog.contributorEmail, fundingLog.Campaign.title, fundingLog.amountRequested, fundingLog.requestCurrency);
+   }
+   return sendSuccess(res, 'Payment confirmed. Contribution recorded.', {}, 200);
   }
 
   return res.status(400).json({ msg: 'Payment failed. Contribution not recorded.' });
  } catch (err) {
   console.error(err);
-  res.status(500).json({ msg: 'Server error', error: err.message });
+  return next(err);
  }
 };
 
@@ -270,3 +309,100 @@ function isValidFlutterwaveWebhook(rawBody, signature, secretHash) {
 
  return hash === signature;
 }
+
+/**
+------------Anonymous contributions
+ */
+
+exports.initiateAnonymousPayment = async (req, res, next) => {
+ //run validation
+ console.log(req.body);
+ const { error, value } = validateAnonymousPayment(req.body);
+
+ if (error) {
+  const messages = error.details.map((err) => err.message);
+  return next(
+   ApiError.validationError({
+    data: messages,
+   }),
+  );
+ }
+
+ let { campaignId, amount, requestCurrency, paymentMethod, paymentProviderId, email } = value;
+ try {
+  const campaign = await Campaign.findByPk(campaignId);
+
+  if (!campaign) {
+   return next(ApiError.notFound('Could not find any record for the given campaign data.'));
+  }
+
+  if (!campaign.isComplete || campaign.status !== 'approved') {
+   return res.status(400).json({
+    msg: 'This campaign is not open for contributions. It must be approved and active.',
+   });
+  }
+
+  const paymentProvider = await PaymentProvider.findByPk(paymentProviderId);
+  if (!paymentProvider) return next(ApiError.badRequest('Invalid payment provider.'));
+
+  const systemTransactionId = `sys_a_${Date.now()}`;
+
+  /* -- optional FX look‑up if requestCurrency !== campaign.currency -- */
+  let fxRate = null;
+  let baseAmt = null;
+  //let baseCurrency = campaign.currency;
+  if (requestCurrency && requestCurrency !== campaign.currency) {
+   // fetch live or cached FX rate here
+   // fxRate = await getRate(requestCurrency, campaign.currency);
+   fxRate = 1; // Placeholder for actual FX rate lookup
+   baseAmt = (parseFloat(amount) * fxRate).toFixed(2);
+   //let baseCurrency = campaign.currency;
+   return res.status(400).json({
+    msg: 'Currency conversion not supported yet. Please use the campaign currency.',
+   });
+  }
+
+  const checkoutInfo = await anonymousPaymentLink({
+   providerKey: paymentProvider.key,
+   amount,
+   currency: requestCurrency,
+   email,
+   campaignId,
+   transactionId: systemTransactionId,
+  });
+
+  await FundingLog.create({
+   campaignId,
+   userId: null,
+   paymentProviderId,
+   amountRequested: amount,
+   requestCurrency,
+   baseAmount: baseAmt,
+   baseCurrency: requestCurrency,
+   fxRate,
+   paymentMethod,
+   systemTransactionId,
+   status: 'pending',
+   metadata: {
+    userEmail: email,
+    campaignTitle: campaign.title,
+    checkoutInfo: checkoutInfo,
+   },
+   isAnonymous: true,
+   contributorEmail: email,
+  });
+
+  return sendSuccess(
+   res,
+   'Payment initiated',
+   {
+    authorizationUrl: checkoutInfo.authorization_url,
+    accessCode: checkoutInfo.access_code,
+    reference: checkoutInfo.reference,
+   },
+   201,
+  );
+ } catch (err) {
+  next(err);
+ }
+};

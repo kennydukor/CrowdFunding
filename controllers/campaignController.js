@@ -7,8 +7,6 @@ const { sendSuccess, sendError } = require('../utils/general');
 exports.startCampaign = async (req, res) => {
  const { title, description, location, country, category, beneficiary } = req.body;
 
- console.log(req);
-
  try {
   // 1) Fetch user (Sequelize)
   const user = await User.findByPk(req.userId);

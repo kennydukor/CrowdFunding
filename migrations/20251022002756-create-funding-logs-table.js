@@ -20,9 +20,10 @@ module.exports = {
    },
    userId: {
     type: Sequelize.INTEGER,
-    allowNull: false,
+    allowNull: true,
     references: { model: 'users', key: 'id' },
-    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+    onDelete: 'SET NULL',
    },
    paymentProviderId: {
     type: Sequelize.INTEGER,
@@ -75,6 +76,15 @@ module.exports = {
    status: {
     type: Sequelize.ENUM('pending', 'successful', 'failed', 'refunded'),
     defaultValue: 'pending',
+   },
+   isAnonymous: {
+    type: Sequelize.BOOLEAN,
+    allowNull: true,
+    defaultValue: false,
+   },
+   contributorEmail: {
+    type: Sequelize.STRING,
+    allowNull: true,
    },
    metadata: {
     type: Sequelize.JSONB,
