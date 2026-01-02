@@ -2,105 +2,113 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../utils/db.js');
 const bcrypt = require('bcryptjs');
 
-const User = sequelize.define('User', {
+const User = sequelize.define(
+ 'User',
+ {
   email: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    unique: true,
+   type: DataTypes.STRING,
+   allowNull: false,
+   unique: true,
   },
   password: {
-    type: DataTypes.STRING,
-    allowNull: false,
+   type: DataTypes.STRING,
+   allowNull: false,
   },
   profilePicture: {
-    type: DataTypes.STRING,
-    defaultValue: '',
+   type: DataTypes.STRING,
+   defaultValue: '',
   },
   bio: {
-    type: DataTypes.TEXT,
-    defaultValue: '',
+   type: DataTypes.TEXT,
+   defaultValue: '',
   },
   firstName: {
-    type: DataTypes.STRING,
+   type: DataTypes.STRING,
   },
   middleName: {
-    type: DataTypes.STRING,
+   type: DataTypes.STRING,
   },
   lastName: {
-    type: DataTypes.STRING,
+   type: DataTypes.STRING,
   },
   gender: {
-  type: DataTypes.ENUM('male', 'female', 'others'),
-  allowNull: true,
+   type: DataTypes.ENUM('male', 'female', 'others'),
+   allowNull: true,
   },
   organizationName: {
-    type: DataTypes.STRING,
+   type: DataTypes.STRING,
   },
   userType: {
-    type: DataTypes.ENUM('Individual', 'Organization', 'Admin'),
-    allowNull: false,
+   type: DataTypes.ENUM('Individual', 'Organization', 'Admin'),
+   allowNull: false,
   },
   role: {
-    type: DataTypes.ENUM('user', 'admin'),
-    defaultValue: 'user',
+   type: DataTypes.ENUM('user', 'admin'),
+   defaultValue: 'user',
   },
   resetPasswordToken: {
-    type: DataTypes.STRING,
+   type: DataTypes.STRING,
   },
   resetPasswordExpire: {
-    type: DataTypes.DATE,
+   type: DataTypes.DATE,
   },
   otp: {
-    type: DataTypes.STRING,
+   type: DataTypes.STRING,
   },
   otpExpire: {
-    type: DataTypes.DATE,
+   type: DataTypes.DATE,
   },
   isVerified: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false,
+   type: DataTypes.BOOLEAN,
+   defaultValue: false,
   },
   KYCStatus: {
-    type: DataTypes.ENUM('pending', 'approved', 'rejected'),
-    defaultValue: 'pending',
+   type: DataTypes.ENUM('pending', 'approved', 'rejected'),
+   defaultValue: 'pending',
   },
   KYCDocument: {
-    type: DataTypes.STRING,
+   type: DataTypes.STRING,
   },
-  status:{
-    type: DataTypes.ENUM('blocked', 'active','inactive'),
-    defaultValue: "active",
+  status: {
+   type: DataTypes.ENUM('blocked', 'active', 'inactive'),
+   defaultValue: 'active',
   },
   numberOfFailedLoginAuthAttempt: {
-    type: DataTypes.INTEGER,
-    defaultValue: 0,
+   type: DataTypes.INTEGER,
+   defaultValue: 0,
   },
   otpRequestCount: {
-    type: DataTypes.INTEGER,
-    defaultValue: 0,
+   type: DataTypes.INTEGER,
+   defaultValue: 0,
   },
   otpRequestTimestamp: {
-    type: DataTypes.DATE,
+   type: DataTypes.DATE,
   },
-}, {
+ },
+ {
   tableName: 'users',
   timestamps: true,
-});
+ },
+);
 
 // **Model Hook**: Hash the password before creating (and optionally before updating)
 User.beforeCreate(async (user, options) => {
-  if (user.password) {
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(user.password, salt);
-  }
+ if (user.password) {
+  const salt = await bcrypt.genSalt(10);
+  user.password = await bcrypt.hash(user.password, salt);
+ }
 });
 
 User.beforeUpdate(async (user, options) => {
-  // Only hash if password is modified
-  if (user.changed('password')) {
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(user.password, salt);
-  }
+ // Only hash if password is modified
+ if (user.changed('password')) {
+  const salt = await bcrypt.genSalt(10);
+  user.password = await bcrypt.hash(user.password, salt);
+ }
+ console.log({ password: user.password });
 });
 
+User.prototype.comparePassword = function (plainPassword) {
+ return bcrypt.compare(plainPassword, this.password);
+};
 module.exports = User;

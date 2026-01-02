@@ -17,6 +17,13 @@ module.exports = (err, req, res, next) => {
   });
  }
 
+ if (err.name === 'SequelizeValidationError') {
+  return res.status(422).json({
+   errors: err.errors.map((e) => e.message),
+   message: 'Validation Error',
+  });
+ }
+
  const status = err.status || 500;
  return res.status(status).json({
   success: false,

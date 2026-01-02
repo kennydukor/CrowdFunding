@@ -17,6 +17,7 @@ const cors = require('cors');
 const { sequelize } = require('./models');
 const webhooksRoutes = require('./routes/webhooksRoutes');
 const errorHandler = require('./services/error-handler');
+const ApiError = require('./utils/api-error');
 
 // Load environment variables
 dotenv.config();
@@ -57,7 +58,7 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/webhooks', webhooksRoutes);
 
 app.all('*', (req, res, next) => {
- return next(new Error('Route not found'));
+ return next(new ApiError('Route not found', 404));
 });
 
 app.use(errorHandler);
